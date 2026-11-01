@@ -30,5 +30,19 @@ document.getElementById('file').onchange=async e=>{let f=e.target.files[0];if(!f
 for(let r of rows.slice(1)){if(isStudent){let id=r[1]||'',name=(r[2]||'').trim(),cls=(r[3]||'').trim();if(!name||!cls)continue;if(!students.some(x=>x.name.trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&x.className.trim().toLocaleLowerCase('tr-TR')===cls.toLocaleLowerCase('tr-TR'))){students.push({studentId:id||String(students.length+1).padStart(4,'0'),name,className:cls});addedS++}}else if(isRecord){let date=r[1]||r[0]||'',id=r[2]||r[1]||'',name=(r[3]||r[2]||'').trim(),cls=(r[4]||r[3]||'').trim();if(!date||!name||!cls)continue;let key=[date,name.toLocaleLowerCase('tr-TR'),cls.toLocaleLowerCase('tr-TR')].join('|');if(!records.some(x=>[x.date,x.name.toLocaleLowerCase('tr-TR'),x.className.toLocaleLowerCase('tr-TR')].join('|')===key)){records.push({date,studentId:id,name,className:cls});addedR++}}}
 if(isStudent){putStudents(students);document.getElementById('notice').textContent=addedS+' yeni öğrenci aktarıldı. Var olan öğrenciler korundu.';renderStudents();updateNextId()}else if(isRecord){putRecords(records);document.getElementById('notice').textContent=addedR+' yeni yoklama kaydı aktarıldı. Tekrar kayıtlar atlandı.';renderRecords()}else throw Error('Dosya biçimi tanınmadı. Öğrenci veya yoklama CSV dosyasını seçin.');
 }catch(err){document.getElementById('notice').textContent='Aktarım yapılamadı: '+err.message}e.target.value=''};
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}renderStudents();renderRecords();updateNextId();
+function dailyReport(){
+ const a=getRecords().filter(x=>x.date===today());
+ const unique=[...new Map(a.map(x=>[(x.name+'|'+x.className).toLocaleLowerCase('tr-TR'),x])).values()];
+ const groups={};
+ unique.forEach(x=>groups[x.className]=(groups[x.className]||0)+1);
+ let html='<section class="card"><div class="sectiontitle">Bugünün Yemek Raporu</div><h2>Toplam gelen: '+unique.length+'</h2>';
+ Object.keys(groups).sort().forEach(k=>html+='<p>'+escapeHtml(k)+': <b>'+groups[k]+'</b> öğrenci</p>');
+ html+='</section>';
+ let old=document.getElementById('dailyReport');
+ if(old)old.remove();
+ let d=document.createElement('div');d.id='dailyReport';d.innerHTML=html;
+ document.querySelector('header').after(d);
+}
+dailyReport();
+  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}renderStudents();renderRecords();updateNextId();
 </script></body></html>
