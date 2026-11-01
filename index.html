@@ -34,9 +34,12 @@ function dailyReport(){
  const a=getRecords().filter(x=>x.date===today());
  const unique=[...new Map(a.map(x=>[(x.name+'|'+x.className).toLocaleLowerCase('tr-TR'),x])).values()];
  const groups={};
- unique.forEach(x=>groups[x.className]=(groups[x.className]||0)+1);
+ unique.forEach(x=>{
+ const k=String(x.className||'').replace(/[\s-]/g,'').toLocaleUpperCase('tr-TR');
+ groups[k]=(groups[k]||0)+1;
+});
  let html='<section class="card"><div class="sectiontitle">Bugünün Yemek Raporu</div><h2>Toplam gelen: '+unique.length+'</h2>';
- Object.keys(groups).sort().forEach(k=>html+='<p>'+escapeHtml(k)+': <b>'+groups[k]+'</b> öğrenci</p>');
+Object.keys(groups).sort().forEach(k=>{const label=k.replace(/^(\d+)([A-ZÇĞİÖŞÜ])$/,'$1-$2');html+='<p>'+escapeHtml(label)+': <b>'+groups[k]+'</b> öğrenci</p>';});
  html+='</section>';
  let old=document.getElementById('dailyReport');
  if(old)old.remove();
