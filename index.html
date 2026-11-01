@@ -41,7 +41,7 @@ function dailyReport(){
  let old=document.getElementById('dailyReport');
  if(old)old.remove();
  let d=document.createElement('div');d.id='dailyReport';d.innerHTML=html;
- document.querySelector('header').after(d);
+ document.body.appendChild(d);
 }
 dailyReport();
   if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}renderStudents();renderRecords();updateNextId();
