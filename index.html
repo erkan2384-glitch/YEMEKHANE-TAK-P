@@ -69,78 +69,112 @@ Object.keys(groups).sort().forEach(k=>{const label=k.replace(/^(\d+)([A-ZÇĞİ�
 }
 dailyReport();
   let cameraStream=null;
-document.getElementById('startCamera').onclick=async()=>{
-  try{
-    cameraStream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:'user'},audio:false
-    });
-    document.getElementById('faceCamera').srcObject=cameraStream;
-    document.getElementById('cameraStatus').textContent='Kamera açıldı.';
-  }catch(e){
-    document.getElementById('cameraStatus').textContent='Kamera açılamadı: '+e.message;
-  }
-};
-document.getElementById('stopCamera').onclick=()=>{
-  if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());
-  cameraStream=null;
-  document.getElementById('faceCamera').srcObject=null;
-  document.getElementById('cameraStatus').textContent='Kamera kapatıldı.';
-};
   if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}renderStudents();renderRecords();updateNextId();
 </script>
 <script type="module">
-import {
-  FaceDetector,
-  FilesetResolver
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
 const status = document.getElementById("cameraStatus");
 const video = document.getElementById("faceCamera");
+const canvas = document.getElementById("faceCanvas");
+const ctx = canvas.getContext("2d");
+const startButton = document.getElementById("startCamera");
+const stopButton = document.getElementById("stopCamera");
 
 let detector = null;
+let cameraStream = null;
 let running = false;
+let animationId = null;
+let starting = false;
 
-async function detectFaces() {
-  if (!detector) {
-    status.textContent = "Yüz algılama hazırlanıyor...";
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-    );
-    detector = await FaceDetector.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: "./blaze_face_short_range.tflite"
-      },
-      runningMode: "VIDEO"
-    });
-  }
-
-  running = true;
-
-  function scan() {
-    if (!running || video.readyState < 2) {
-      if (running) requestAnimationFrame(scan);
-      return;
-    }
-
-    const result = detector.detectForVideo(video, performance.now());
-    status.textContent = result.detections.length
-      ? "Yüz algılandı."
-      : "Henüz yüz algılanmadı.";
-
-    requestAnimationFrame(scan);
-  }
-
-  scan();
+async function prepareDetector() {
+  if (detector) return;
+  status.textContent = "Yüz algılama modeli yükleniyor...";
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+  detector = await FaceDetector.createFromOptions(vision, {
+    baseOptions: { modelAssetPath: "./blaze_face_short_range.tflite" },
+    runningMode: "VIDEO"
+  });
 }
 
-document.getElementById("startCamera").addEventListener("click", () => {
-  setTimeout(() => detectFaces().catch(error => {
-    status.textContent = "Algılama hatası: " + error.message;
-  }), 1000);
+function scan() {
+  if (!running) return;
+
+  if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+    animationId = requestAnimationFrame(scan);
+    return;
+  }
+
+  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const result = detector.detectForVideo(video, performance.now());
+
+  for (const detection of result.detections) {
+    const box = detection.boundingBox;
+    if (!box) continue;
+    ctx.strokeStyle = "#00e676";
+    ctx.lineWidth = Math.max(3, canvas.width / 180);
+    ctx.strokeRect(box.originX, box.originY, box.width, box.height);
+  }
+
+  status.textContent = result.detections.length
+    ? "Yüz algılandı."
+    : "Henüz yüz algılanmadı.";
+
+  animationId = requestAnimationFrame(scan);
+}
+
+startButton.addEventListener("click", async () => {
+  if (starting || running) return;
+  starting = true;
+  startButton.disabled = true;
+
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error("Bu tarayıcı kamera erişimini desteklemiyor. Safari üzerinden HTTPS adresini açın.");
+    }
+
+    status.textContent = "Kamera açılıyor...";
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: "user" }
+    });
+
+    video.srcObject = cameraStream;
+    await video.play();
+
+    await prepareDetector();
+
+    running = true;
+    status.textContent = "Kamera hazır. Yüz aranıyor...";
+    scan();
+  } catch (error) {
+    if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+    video.srcObject = null;
+    running = false;
+    status.textContent = "Kamera/algılama açılamadı: " + error.message;
+  } finally {
+    starting = false;
+    startButton.disabled = false;
+  }
 });
 
-document.getElementById("stopCamera").addEventListener("click", () => {
+stopButton.addEventListener("click", () => {
   running = false;
-});
+  if (animationId) cancelAnimationFrame(animationId);
+  animationId = null;
 
+  if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
+  cameraStream = null;
+  video.srcObject = null;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  status.textContent = "Kamera kapatıldı.";
+});
 </script></body></html>
