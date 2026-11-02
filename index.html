@@ -16,8 +16,16 @@ const putStudents=x=>localStorage.setItem(SK,JSON.stringify(x));let selectedId=n
 function nextStudentId(){let ids=getStudents().map(s=>parseInt(String(s.studentId).replace(/\D/g,''),10)).filter(Number.isFinite);let n=(ids.length?Math.max(...ids):0)+1;return String(n).padStart(4,'0')}
 function updateNextId(){document.getElementById('nextId').textContent=nextStudentId()}
 function renderStudents(){let q=document.getElementById('search').value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById('results');box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div><button class="primary" data-id="${encodeURIComponent(s.studentId)}">Bugün geldi olarak kaydet</button></div>`).join(''):'<p class="small">Öğrenci bulunamadı. Yeni Öğrenci Ekle bölümünden ekleyebilirsiniz.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;el.querySelector('button').onclick=()=>markStudent(students[i])})}
-function renderRecords(){let a=getRecords().sort((x,y)=>y.date.localeCompare(x.date));document.getElementById('records').innerHTML=a.length?'<ul>'+a.map(x=>'<li>'+x.date+' — '+escapeHtml(x.name)+' ('+escapeHtml(x.className)+')</li>').join('')+'</ul>':'<p class="small">Henüz kayıt yok.</p>'}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function deleteRecord(index){
+  if(!confirm('Bu yoklama kaydını silmek istiyor musunuz?')) return;
+  const records=getRecords();
+  records.splice(index,1);
+  putRecords(records);
+  renderRecords();
+}function renderRecords(){
+let a=getRecords().map((x,i)=>({...x,_i:i})).sort((x,y)=>y.date.localeCompare(x.date));
+document.getElementById('records').innerHTML=a.length?'<ul>'+a.map(x=>'<li>'+x.date+' — '+escapeHtml(x.name)+' ('+escapeHtml(x.className)+') <button onclick="deleteRecord('+x._i+')">Sil</button></li>').join('')+'</ul>':'<p class="small">Henüz kayıt yok.</p>';
+}function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function markStudent(s){let a=getRecords();a.push({date:today(),studentId:s.studentId,name:s.name,className:s.className});putRecords(a);document.getElementById('notice').textContent=s.name+' için kayıt bu telefona kaydedildi.';renderRecords()}
 document.getElementById('search').oninput=renderStudents;
 document.getElementById('addStudent').onclick=()=>{let studentId=nextStudentId(),name=document.getElementById('newName').value.trim(),className=document.getElementById('newClass').value.trim();if(!name||!className){document.getElementById('notice').textContent='Lütfen adı soyadı ve sınıfını doldurun.';return}let a=getStudents();if(a.some(s=>s.studentId===studentId)){document.getElementById('notice').textContent='Numara çakışması oldu. Sayfayı yenileyip tekrar deneyin.';return}a.push({studentId,name,className});putStudents(a);document.getElementById('newName').value='';document.getElementById('newClass').value='';document.getElementById('search').value='';document.getElementById('notice').textContent=name+' öğrenci listesine '+studentId+' numarasıyla eklendi.';renderStudents();updateNextId()};
