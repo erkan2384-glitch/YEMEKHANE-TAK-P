@@ -7,6 +7,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
 <section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A"></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Eklenen öğrenci bu telefonda saklanır. Diğer telefona ayrıca aktarılması gerekir.</p></section>
 <section class="card"><label for="search">Öğrenci ara</label><input id="search" placeholder="Adını söyleyin veya yazın" autocomplete="off"><p class="small">Sesle aramak için iPhone klavyesindeki mikrofon simgesini kullanın.</p><div id="results"></div><div id="notice"></div></section>
 <section class="card"><b>Bu telefondaki kayıtlar</b><p class="small">Öğrenciler ve yoklamalar bu cihazda saklanır. İki telefon arasında CSV ile aktarılır; otomatik eşitlenmez.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
+  <section class="card">
+  <b>Kamera Testi</b>
+  <video id="faceCamera" autoplay playsinline muted
+    style="width:100%;border-radius:12px;margin-top:12px"></video>
+  <div class="row">
+    <button id="startCamera" class="primary">Kamerayı Aç</button>
+    <button id="stopCamera" class="secondary">Kapat</button>
+  </div>
+  <p id="cameraStatus" class="small">Kamera henüz açılmadı.</p>
+</section>
 <script>
 const RK='yemekhane_demo_v1',SK='yemekhane_students_v1';
 const today=()=>{let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
@@ -55,5 +65,23 @@ Object.keys(groups).sort().forEach(k=>{const label=k.replace(/^(\d+)([A-ZÇĞİ�
  document.body.appendChild(d);
 }
 dailyReport();
+  let cameraStream=null;
+document.getElementById('startCamera').onclick=async()=>{
+  try{
+    cameraStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'user'},audio:false
+    });
+    document.getElementById('faceCamera').srcObject=cameraStream;
+    document.getElementById('cameraStatus').textContent='Kamera açıldı.';
+  }catch(e){
+    document.getElementById('cameraStatus').textContent='Kamera açılamadı: '+e.message;
+  }
+};
+document.getElementById('stopCamera').onclick=()=>{
+  if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());
+  cameraStream=null;
+  document.getElementById('faceCamera').srcObject=null;
+  document.getElementById('cameraStatus').textContent='Kamera kapatıldı.';
+};
   if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}renderStudents();renderRecords();updateNextId();
 </script></body></html>
