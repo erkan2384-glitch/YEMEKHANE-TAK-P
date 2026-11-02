@@ -9,8 +9,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
 <section class="card"><b>Bu telefondaki kayıtlar</b><p class="small">Öğrenciler ve yoklamalar bu cihazda saklanır. İki telefon arasında CSV ile aktarılır; otomatik eşitlenmez.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
   <section class="card">
   <b>Kamera Testi</b>
-  <video id="faceCamera" autoplay playsinline muted
-    style="width:100%;border-radius:12px;margin-top:12px"></video>
+ <div style="position:relative;width:100%"> <video id="<div style="position:relative;width:100%"><video id="faceCamera" autoplay playsinline muted
+    style="width:100%;border-radius:12px;margin-top:12px"></video><canvas id="faceCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas></div>
   <div class="row">
     <button id="startCamera" class="primary">Kamerayı Aç</button>
     <button id="stopCamera" class="secondary">Kapat</button>
