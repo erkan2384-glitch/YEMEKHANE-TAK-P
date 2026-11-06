@@ -6,6 +6,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
 <section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A"></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div><div class="wide"><label for="parentPhone">Veli telefon numarası</label><input id="parentPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Örn. 05xx xxx xx xx"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Eklenen öğrenci bu telefonda saklanır. Diğer telefona ayrıca aktarılması gerekir.</p></section>
 <section class="card"><label for="search">Öğrenci ara</label><input id="search" placeholder="Adını söyleyin veya yazın" autocomplete="off"><p class="small">Sesle aramak için iPhone klavyesindeki mikrofon simgesini kullanın.</p><div id="results"></div><div id="notice"></div></section>
+
+<section class="card" id="whatsappCard">
+  <div class="sectiontitle">Velilere WhatsApp Mesajı</div>
+  <label for="waClass">Alıcı grubu</label>
+  <select id="waClass">
+    <option value="__ALL__">Tüm veliler</option>
+  </select>
+  <label for="waMessage">Mesajınız</label>
+  <textarea id="waMessage" rows="4" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccd5dd;border-radius:10px;font:16px -apple-system,BlinkMacSystemFont,sans-serif" placeholder="Velilere göndermek istediğiniz mesajı yazın. Öğrenci adı için {ogrenci} yazabilirsiniz.">Merhaba, {ogrenci} isimli öğrencimizin yemekhane bilgilendirmesini paylaşmak istiyoruz.</textarea>
+  <p id="waInfo" class="small">Telefon numaraları öğrenci kayıtlarından alınır. Rehbere kaydetmek gerekmez.</p>
+  <button id="waNext" class="primary">WhatsApp'ta sıradaki veliyi aç</button>
+  <button id="waReset" class="secondary" style="width:100%;margin-top:8px">Gönderim sırasını baştan başlat</button>
+  <p class="small">Her veli için WhatsApp sohbeti ayrı açılır. Mesajı göndermek için WhatsApp içindeki Gönder düğmesine basmanız gerekir. Telefonu eksik olan öğrenciler atlanır.</p>
+</section>
+
 <section class="card"><b>Bu telefondaki kayıtlar</b><p class="small">Öğrenciler ve yoklamalar bu cihazda saklanır. İki telefon arasında CSV ile aktarılır; otomatik eşitlenmez.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button><button id="backupBtn" class="secondary">Tüm verileri yedekle</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
   <script>
 const RK='yemekhane_demo_v1',SK='yemekhane_students_v1';
@@ -37,7 +52,62 @@ function markStudent(s){
   putRecords(a);
   document.getElementById('notice').textContent=s.name+' için kayıt bu telefona kaydedildi.';
   renderRecords();
-  dailyReport();
+  
+const waClass=document.getElementById('waClass');
+const waMessage=document.getElementById('waMessage');
+const waInfo=document.getElementById('waInfo');
+let waRecipients=[];
+let waIndex=0;
+function refreshWhatsAppRecipients(reset=true){
+  const current=waClass.value||'__ALL__';
+  const students=getStudents().slice().sort((a,b)=>a.name.localeCompare(b.name,'tr',{sensitivity:'base'}));
+  const classes=[...new Set(students.map(s=>String(s.className||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr',{numeric:true}));
+  waClass.innerHTML='<option value="__ALL__">Tüm veliler</option>'+classes.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join('');
+  if(current==='__ALL__'||classes.includes(current))waClass.value=current;
+  const chosen=waClass.value==='__ALL__'?students:students.filter(s=>String(s.className||'').trim()===waClass.value);
+  waRecipients=chosen.filter(s=>normalizeWaPhone(s.parentPhone));
+  const missing=chosen.length-waRecipients.length;
+  if(reset)waIndex=0;
+  waInfo.textContent=chosen.length+' öğrenci seçildi · '+waRecipients.length+' geçerli veli telefonu var · '+missing+' telefon eksik.';
+}
+function normalizeWaPhone(value){
+  let digits=String(value||'').replace(/\D/g,'');
+  if(digits.startsWith('00'))digits=digits.slice(2);
+  if(digits.startsWith('0'))digits=digits.slice(1);
+  if(digits.length===10)digits='90'+digits;
+  if(digits.length===12&&digits.startsWith('90'))return digits;
+  return '';
+}
+waClass.addEventListener('change',()=>refreshWhatsAppRecipients(true));
+document.getElementById('waReset').addEventListener('click',()=>{
+  waIndex=0;
+  refreshWhatsAppRecipients(false);
+  waInfo.textContent='Gönderim sırası baştan başladı. '+waRecipients.length+' veli sırada.';
+});
+document.getElementById('waNext').addEventListener('click',()=>{
+  refreshWhatsAppRecipients(false);
+  if(!waRecipients.length){
+    waInfo.textContent='Bu grupta telefon numarası kayıtlı veli bulunamadı. Önce veli telefonlarını öğrenci kayıtlarına aktarın.';
+    return;
+  }
+  if(waIndex>=waRecipients.length){
+    waInfo.textContent='Bu gruptaki tüm kayıtlı numaralar sırayla açıldı. Yeniden başlamak için sıfırlama düğmesine basın.';
+    return;
+  }
+  const student=waRecipients[waIndex];
+  const message=waMessage.value.trim().replace(/\{ogrenci\}/gi,student.name);
+  if(!message){
+    waInfo.textContent='Lütfen önce mesaj metnini yazın.';
+    return;
+  }
+  const url='https://wa.me/'+normalizeWaPhone(student.parentPhone)+'?text='+encodeURIComponent(message);
+  waIndex++;
+  waInfo.textContent=(waIndex)+' / '+waRecipients.length+' · '+student.name+' velisinin WhatsApp sohbeti açılıyor. Mesajı WhatsApp içinden gönderin.';
+  window.open(url,'_blank');
+});
+refreshWhatsAppRecipients();
+
+dailyReport();
   return true;
 }
 document.getElementById('search').oninput=renderStudents;
