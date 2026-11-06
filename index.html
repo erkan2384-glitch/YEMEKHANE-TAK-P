@@ -21,7 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
   </div>
   <div id="waStudentWrap" style="display:block;margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px">
     <label for="waStudent">Öğrenci seçimi (Alıcı seçimi bölümünde “Öğrenci seç” seçiliyken kullanılır)</label>
-    <input id="waStudentSearch" type="search" placeholder="Öğrenci adını yazıp ara" style="margin-bottom:8px"><select id="waStudent"><option value="">Öğrenci seçin</option></select><p class="small">Önce yukarıdaki kutuya öğrencinin adını yazın, sonra listeden seçin.</p>
+    <input id="waStudentSearch" type="search" placeholder="Öğrenci adını yazıp ara" style="margin-bottom:8px"><select id="waStudent"><option value="">Öğrenci seçin</option></select><p class="small">Önce yukarıdaki kutuya öğrencinin adını yazın, sonra listeden seçin. Liste uygulamadaki kayıtlı öğrencilerden alınır.</p>
   </div>
   <label for="waMessage">Mesajınız</label>
   <textarea id="waMessage" rows="4" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccd5dd;border-radius:10px;font:16px -apple-system,BlinkMacSystemFont,sans-serif" placeholder="Velilere göndermek istediğiniz mesajı yazın. Öğrenci adı için {ogrenci} yazabilirsiniz.">Merhaba, {ogrenci} isimli öğrencimizin yemekhane bilgilendirmesini paylaşmak istiyoruz.</textarea>
@@ -81,26 +81,51 @@ function normalizeWaPhone(value){
   return '';
 }
 function sortedStudents(){
-  return getStudents().slice().sort((a,b)=>a.name.localeCompare(b.name,'tr',{sensitivity:'base'}));
+  return getStudents().slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'tr',{sensitivity:'base'}));
 }
 function refreshWhatsAppSelectors(){
   const students=sortedStudents();
   const classes=[...new Set(students.map(s=>String(s.className||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr',{numeric:true}));
   const oldClass=waClass.value;
   const oldStudent=waStudent.value;
-  waClass.innerHTML='<option value="">Sınıf seçin</option>'+classes.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join('');
-  waStudent.innerHTML='<option value="">Öğrenci seçin</option>'+students.map(s=>'<option value="'+encodeURIComponent(String(s.studentId))+'">'+escapeHtml(s.name+' — '+s.className+' · No: '+s.studentId)+'</option>').join('');
+
+  waClass.innerHTML='';
+  const classPrompt=document.createElement('option');
+  classPrompt.value='';
+  classPrompt.textContent=classes.length?'Sınıf seçin':'Kayıtlı sınıf bulunamadı';
+  waClass.appendChild(classPrompt);
+  classes.forEach(c=>{
+    const option=document.createElement('option');
+    option.value=c;
+    option.textContent=c;
+    waClass.appendChild(option);
+  });
   if(classes.includes(oldClass))waClass.value=oldClass;
-  if(students.some(s=>String(s.studentId)===decodeURIComponent(oldStudent||'!')))waStudent.value=oldStudent;
+
+  waStudent.innerHTML='';
+  const studentPrompt=document.createElement('option');
+  studentPrompt.value='';
+  studentPrompt.textContent=students.length?'Öğrenci seçin':'Kayıtlı öğrenci bulunamadı';
+  waStudent.appendChild(studentPrompt);
+  students.forEach(s=>{
+    const option=document.createElement('option');
+    option.value=String(s.studentId);
+    option.textContent=String(s.name||'İsimsiz öğrenci')+' — '+String(s.className||'Sınıf yok')+' · No: '+String(s.studentId||'');
+    waStudent.appendChild(option);
+  });
+  if(students.some(s=>String(s.studentId)===oldStudent))waStudent.value=oldStudent;
+
   waClassWrap.style.display='block';
   waStudentWrap.style.display='block';
+  const status=document.getElementById('waInfo');
+  if(status && !students.length)status.textContent='Öğrenci kaydı bulunamadı. Önce öğrenci listesini kontrol edin.';
 }
 function refreshWhatsAppRecipients(reset=true){
   refreshWhatsAppSelectors();
   const students=sortedStudents();
   let chosen=students;
   if(waMode.value==='class')chosen=students.filter(s=>String(s.className||'').trim()===waClass.value);
-  if(waMode.value==='student')chosen=waStudent.value?students.filter(s=>String(s.studentId)===decodeURIComponent(waStudent.value)):[];
+  if(waMode.value==='student')chosen=waStudent.value?students.filter(s=>String(s.studentId)===waStudent.value):[];
   waRecipients=chosen.filter(s=>normalizeWaPhone(s.parentPhone));
   const missing=chosen.length-waRecipients.length;
   if(reset)waIndex=0;
@@ -113,17 +138,28 @@ waMode.addEventListener('change',()=>{
 });
 waClass.addEventListener('change',()=>refreshWhatsAppRecipients(true));
 waStudent.addEventListener('change',()=>refreshWhatsAppRecipients(true));
+waClass.addEventListener('focus',refreshWhatsAppSelectors);
+waStudent.addEventListener('focus',refreshWhatsAppSelectors);
 waMode.value='all';
 waClassWrap.style.display='block';
 waStudentWrap.style.display='block';
 document.getElementById('waStudentSearch').addEventListener('input',()=>{
   const query=document.getElementById('waStudentSearch').value.trim().toLocaleLowerCase('tr-TR');
-  const students=sortedStudents().filter(s=>(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(query));
+  const students=sortedStudents().filter(s=>(String(s.name||'')+' '+String(s.className||'')+' '+String(s.studentId||'')).toLocaleLowerCase('tr-TR').includes(query));
   const current=waStudent.value;
-  waStudent.innerHTML='<option value="">Öğrenci seçin</option>'+students.map(s=>'<option value="'+encodeURIComponent(String(s.studentId))+'">'+escapeHtml(s.name+' — '+s.className+' · No: '+s.studentId)+'</option>').join('');
-  if(students.some(s=>encodeURIComponent(String(s.studentId))===current))waStudent.value=current;
+  waStudent.innerHTML='';
+  const prompt=document.createElement('option');
+  prompt.value='';
+  prompt.textContent=students.length?'Öğrenci seçin':'Eşleşen öğrenci bulunamadı';
+  waStudent.appendChild(prompt);
+  students.forEach(s=>{
+    const option=document.createElement('option');
+    option.value=String(s.studentId);
+    option.textContent=String(s.name||'İsimsiz öğrenci')+' — '+String(s.className||'Sınıf yok')+' · No: '+String(s.studentId||'');
+    waStudent.appendChild(option);
+  });
+  if(students.some(s=>String(s.studentId)===current))waStudent.value=current;
 });
-
 document.getElementById('waReset').addEventListener('click',()=>{
   waIndex=0;
   refreshWhatsAppRecipients(false);
