@@ -15,12 +15,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
     <option value="class">Sınıf seç</option>
     <option value="student">Öğrenci seç</option>
   </select>
-  <div id="waClassWrap" style="display:none">
-    <label for="waClass">Sınıf</label>
+  <div id="waClassWrap" style="display:block;margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px">
+    <label for="waClass">Sınıf seçimi (Alıcı seçimi bölümünde “Sınıf seç” seçiliyken kullanılır)</label>
     <select id="waClass"></select>
   </div>
-  <div id="waStudentWrap" style="display:none">
-    <label for="waStudent">Öğrenci</label>
+  <div id="waStudentWrap" style="display:block;margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px">
+    <label for="waStudent">Öğrenci seçimi (Alıcı seçimi bölümünde “Öğrenci seç” seçiliyken kullanılır)</label>
     <input id="waStudentSearch" type="search" placeholder="Öğrenci adını yazıp ara" style="margin-bottom:8px"><select id="waStudent"><option value="">Öğrenci seçin</option></select><p class="small">Önce yukarıdaki kutuya öğrencinin adını yazın, sonra listeden seçin.</p>
   </div>
   <label for="waMessage">Mesajınız</label>
@@ -92,8 +92,8 @@ function refreshWhatsAppSelectors(){
   waStudent.innerHTML='<option value="">Öğrenci seçin</option>'+students.map(s=>'<option value="'+encodeURIComponent(String(s.studentId))+'">'+escapeHtml(s.name+' — '+s.className+' · No: '+s.studentId)+'</option>').join('');
   if(classes.includes(oldClass))waClass.value=oldClass;
   if(students.some(s=>String(s.studentId)===decodeURIComponent(oldStudent||'!')))waStudent.value=oldStudent;
-  waClassWrap.style.display=waMode.value==='class'?'block':'none';
-  waStudentWrap.style.display=waMode.value==='student'?'block':'none';
+  waClassWrap.style.display='block';
+  waStudentWrap.style.display='block';
 }
 function refreshWhatsAppRecipients(reset=true){
   refreshWhatsAppSelectors();
@@ -107,15 +107,15 @@ function refreshWhatsAppRecipients(reset=true){
   waInfo.textContent=chosen.length+' öğrenci seçildi · '+waRecipients.length+' geçerli veli telefonu var · '+missing+' telefon eksik.';
 }
 waMode.addEventListener('change',()=>{
-  waClassWrap.style.display=waMode.value==='class'?'block':'none';
-  waStudentWrap.style.display=waMode.value==='student'?'block':'none';
+  waClassWrap.style.display='block';
+  waStudentWrap.style.display='block';
   refreshWhatsAppRecipients(true);
 });
 waClass.addEventListener('change',()=>refreshWhatsAppRecipients(true));
 waStudent.addEventListener('change',()=>refreshWhatsAppRecipients(true));
 waMode.value='all';
-waClassWrap.style.display='none';
-waStudentWrap.style.display='none';
+waClassWrap.style.display='block';
+waStudentWrap.style.display='block';
 document.getElementById('waStudentSearch').addEventListener('input',()=>{
   const query=document.getElementById('waStudentSearch').value.trim().toLocaleLowerCase('tr-TR');
   const students=sortedStudents().filter(s=>(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(query));
