@@ -21,7 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
   </div>
   <div id="waStudentWrap" style="display:none">
     <label for="waStudent">Öğrenci</label>
-    <select id="waStudent"></select>
+    <input id="waStudentSearch" type="search" placeholder="Öğrenci adını yazıp ara" style="margin-bottom:8px"><select id="waStudent"><option value="">Öğrenci seçin</option></select><p class="small">Önce yukarıdaki kutuya öğrencinin adını yazın, sonra listeden seçin.</p>
   </div>
   <label for="waMessage">Mesajınız</label>
   <textarea id="waMessage" rows="4" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccd5dd;border-radius:10px;font:16px -apple-system,BlinkMacSystemFont,sans-serif" placeholder="Velilere göndermek istediğiniz mesajı yazın. Öğrenci adı için {ogrenci} yazabilirsiniz.">Merhaba, {ogrenci} isimli öğrencimizin yemekhane bilgilendirmesini paylaşmak istiyoruz.</textarea>
@@ -88,8 +88,8 @@ function refreshWhatsAppSelectors(){
   const classes=[...new Set(students.map(s=>String(s.className||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr',{numeric:true}));
   const oldClass=waClass.value;
   const oldStudent=waStudent.value;
-  waClass.innerHTML=classes.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join('');
-  waStudent.innerHTML=students.map(s=>'<option value="'+encodeURIComponent(String(s.studentId))+'">'+escapeHtml(s.name+' — '+s.className+' · No: '+s.studentId)+'</option>').join('');
+  waClass.innerHTML='<option value="">Sınıf seçin</option>'+classes.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join('');
+  waStudent.innerHTML='<option value="">Öğrenci seçin</option>'+students.map(s=>'<option value="'+encodeURIComponent(String(s.studentId))+'">'+escapeHtml(s.name+' — '+s.className+' · No: '+s.studentId)+'</option>').join('');
   if(classes.includes(oldClass))waClass.value=oldClass;
   if(students.some(s=>String(s.studentId)===decodeURIComponent(oldStudent||'!')))waStudent.value=oldStudent;
   waClassWrap.style.display=waMode.value==='class'?'block':'none';
@@ -100,7 +100,7 @@ function refreshWhatsAppRecipients(reset=true){
   const students=sortedStudents();
   let chosen=students;
   if(waMode.value==='class')chosen=students.filter(s=>String(s.className||'').trim()===waClass.value);
-  if(waMode.value==='student')chosen=students.filter(s=>String(s.studentId)===decodeURIComponent(waStudent.value||''));
+  if(waMode.value==='student')chosen=waStudent.value?students.filter(s=>String(s.studentId)===decodeURIComponent(waStudent.value)):[];
   waRecipients=chosen.filter(s=>normalizeWaPhone(s.parentPhone));
   const missing=chosen.length-waRecipients.length;
   if(reset)waIndex=0;
@@ -109,6 +109,14 @@ function refreshWhatsAppRecipients(reset=true){
 waMode.addEventListener('change',()=>refreshWhatsAppRecipients(true));
 waClass.addEventListener('change',()=>refreshWhatsAppRecipients(true));
 waStudent.addEventListener('change',()=>refreshWhatsAppRecipients(true));
+document.getElementById('waStudentSearch').addEventListener('input',()=>{
+  const query=document.getElementById('waStudentSearch').value.trim().toLocaleLowerCase('tr-TR');
+  const students=sortedStudents().filter(s=>(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(query));
+  const current=waStudent.value;
+  waStudent.innerHTML='<option value="">Öğrenci seçin</option>'+students.map(s=>'<option value="'+encodeURIComponent(String(s.studentId))+'">'+escapeHtml(s.name+' — '+s.className+' · No: '+s.studentId)+'</option>').join('');
+  if(students.some(s=>encodeURIComponent(String(s.studentId))===current))waStudent.value=current;
+});
+
 document.getElementById('waReset').addEventListener('click',()=>{
   waIndex=0;
   refreshWhatsAppRecipients(false);
