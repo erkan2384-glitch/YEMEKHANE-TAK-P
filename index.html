@@ -9,10 +9,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
 
 <section class="card" id="whatsappCard">
   <div class="sectiontitle">Velilere WhatsApp Mesajı</div>
-  <label for="waClass">Alıcı grubu</label>
-  <select id="waClass">
-    <option value="__ALL__">Tüm veliler</option>
+  <label for="waMode">Alıcı seçimi</label>
+  <select id="waMode">
+    <option value="all">Tüm veliler</option>
+    <option value="class">Sınıf seç</option>
+    <option value="student">Öğrenci seç</option>
   </select>
+  <div id="waClassWrap" style="display:none">
+    <label for="waClass">Sınıf</label>
+    <select id="waClass"></select>
+  </div>
+  <div id="waStudentWrap" style="display:none">
+    <label for="waStudent">Öğrenci</label>
+    <select id="waStudent"></select>
+  </div>
   <label for="waMessage">Mesajınız</label>
   <textarea id="waMessage" rows="4" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccd5dd;border-radius:10px;font:16px -apple-system,BlinkMacSystemFont,sans-serif" placeholder="Velilere göndermek istediğiniz mesajı yazın. Öğrenci adı için {ogrenci} yazabilirsiniz.">Merhaba, {ogrenci} isimli öğrencimizin yemekhane bilgilendirmesini paylaşmak istiyoruz.</textarea>
   <p id="waInfo" class="small">Telefon numaraları öğrenci kayıtlarından alınır. Rehbere kaydetmek gerekmez.</p>
@@ -53,23 +63,15 @@ function markStudent(s){
   document.getElementById('notice').textContent=s.name+' için kayıt bu telefona kaydedildi.';
   renderRecords();
   
+const waMode=document.getElementById('waMode');
 const waClass=document.getElementById('waClass');
+const waStudent=document.getElementById('waStudent');
+const waClassWrap=document.getElementById('waClassWrap');
+const waStudentWrap=document.getElementById('waStudentWrap');
 const waMessage=document.getElementById('waMessage');
 const waInfo=document.getElementById('waInfo');
 let waRecipients=[];
 let waIndex=0;
-function refreshWhatsAppRecipients(reset=true){
-  const current=waClass.value||'__ALL__';
-  const students=getStudents().slice().sort((a,b)=>a.name.localeCompare(b.name,'tr',{sensitivity:'base'}));
-  const classes=[...new Set(students.map(s=>String(s.className||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr',{numeric:true}));
-  waClass.innerHTML='<option value="__ALL__">Tüm veliler</option>'+classes.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join('');
-  if(current==='__ALL__'||classes.includes(current))waClass.value=current;
-  const chosen=waClass.value==='__ALL__'?students:students.filter(s=>String(s.className||'').trim()===waClass.value);
-  waRecipients=chosen.filter(s=>normalizeWaPhone(s.parentPhone));
-  const missing=chosen.length-waRecipients.length;
-  if(reset)waIndex=0;
-  waInfo.textContent=chosen.length+' öğrenci seçildi · '+waRecipients.length+' geçerli veli telefonu var · '+missing+' telefon eksik.';
-}
 function normalizeWaPhone(value){
   let digits=String(value||'').replace(/\D/g,'');
   if(digits.startsWith('00'))digits=digits.slice(2);
@@ -78,7 +80,35 @@ function normalizeWaPhone(value){
   if(digits.length===12&&digits.startsWith('90'))return digits;
   return '';
 }
+function sortedStudents(){
+  return getStudents().slice().sort((a,b)=>a.name.localeCompare(b.name,'tr',{sensitivity:'base'}));
+}
+function refreshWhatsAppSelectors(){
+  const students=sortedStudents();
+  const classes=[...new Set(students.map(s=>String(s.className||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr',{numeric:true}));
+  const oldClass=waClass.value;
+  const oldStudent=waStudent.value;
+  waClass.innerHTML=classes.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join('');
+  waStudent.innerHTML=students.map(s=>'<option value="'+encodeURIComponent(String(s.studentId))+'">'+escapeHtml(s.name+' — '+s.className+' · No: '+s.studentId)+'</option>').join('');
+  if(classes.includes(oldClass))waClass.value=oldClass;
+  if(students.some(s=>String(s.studentId)===decodeURIComponent(oldStudent||'!')))waStudent.value=oldStudent;
+  waClassWrap.style.display=waMode.value==='class'?'block':'none';
+  waStudentWrap.style.display=waMode.value==='student'?'block':'none';
+}
+function refreshWhatsAppRecipients(reset=true){
+  refreshWhatsAppSelectors();
+  const students=sortedStudents();
+  let chosen=students;
+  if(waMode.value==='class')chosen=students.filter(s=>String(s.className||'').trim()===waClass.value);
+  if(waMode.value==='student')chosen=students.filter(s=>String(s.studentId)===decodeURIComponent(waStudent.value||''));
+  waRecipients=chosen.filter(s=>normalizeWaPhone(s.parentPhone));
+  const missing=chosen.length-waRecipients.length;
+  if(reset)waIndex=0;
+  waInfo.textContent=chosen.length+' öğrenci seçildi · '+waRecipients.length+' geçerli veli telefonu var · '+missing+' telefon eksik.';
+}
+waMode.addEventListener('change',()=>refreshWhatsAppRecipients(true));
 waClass.addEventListener('change',()=>refreshWhatsAppRecipients(true));
+waStudent.addEventListener('change',()=>refreshWhatsAppRecipients(true));
 document.getElementById('waReset').addEventListener('click',()=>{
   waIndex=0;
   refreshWhatsAppRecipients(false);
