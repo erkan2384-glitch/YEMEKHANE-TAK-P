@@ -4,31 +4,10 @@
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;color:#18212b;margin:0;padding:16px;max-width:620px;margin:auto}header{background:#173b57;color:white;padding:20px;border-radius:16px}h1{font-size:23px;margin:0 0 6px}.card{background:white;padding:16px;border-radius:15px;margin:14px 0;box-shadow:0 2px 10px #0001}label{display:block;font-weight:700;margin:12px 0 8px}input,select{width:100%;box-sizing:border-box;padding:14px;border:1px solid #ccd5dd;border-radius:10px;font-size:17px;background:white}.student{border:1px solid #dce3e8;border-radius:12px;padding:14px;margin-top:14px}.name{font-size:21px;font-weight:750}.muted,.small{color:#687684;font-size:13px}button{cursor:pointer}.primary{width:100%;padding:15px;background:#176b4b;color:white;border:0;border-radius:11px;font-size:16px;font-weight:700;margin-top:12px}.secondary{padding:12px;background:#e8eef3;color:#173b57;border:0;border-radius:10px;font-weight:650;flex:1}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}li{padding:7px 0;border-bottom:1px solid #eee}#notice{color:#176b4b;font-size:13px;min-height:18px}.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.addgrid .wide{grid-column:1/-1}.sectiontitle{font-size:18px;font-weight:750}.addcard{position:relative;z-index:1;border:1px solid #d7e0e7;box-shadow:0 5px 18px #0002;padding:12px 14px}.addcard .sectiontitle{font-size:16px}.addcard label{margin:7px 0 5px;font-size:13px}.addcard input{padding:10px 11px;font-size:16px}.addcard .primary{padding:11px;margin-top:9px}.addcard .small{margin:7px 0 0}#results{max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:3px}
 </style></head><body>
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
-<section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A"></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Eklenen öğrenci bu telefonda saklanır. Diğer telefona ayrıca aktarılması gerekir.</p></section>
+<section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A"></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div><div class="wide"><label for="parentPhone">Veli telefon numarası</label><input id="parentPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Örn. 05xx xxx xx xx"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Eklenen öğrenci bu telefonda saklanır. Diğer telefona ayrıca aktarılması gerekir.</p></section>
 <section class="card"><label for="search">Öğrenci ara</label><input id="search" placeholder="Adını söyleyin veya yazın" autocomplete="off"><p class="small">Sesle aramak için iPhone klavyesindeki mikrofon simgesini kullanın.</p><div id="results"></div><div id="notice"></div></section>
 <section class="card"><b>Bu telefondaki kayıtlar</b><p class="small">Öğrenciler ve yoklamalar bu cihazda saklanır. İki telefon arasında CSV ile aktarılır; otomatik eşitlenmez.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button><button id="backupBtn" class="secondary">Tüm verileri yedekle</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
- <section class="card">
-  <b>Kamera Testi</b>
-  <div style="position:relative;width:100%;margin-top:12px;background:#111;border-radius:12px;overflow:hidden;aspect-ratio:4/3">
-    <video id="faceCamera" autoplay playsinline muted
-      style="display:block;width:100%;height:100%;object-fit:cover"></video>
-    <canvas id="faceCanvas"
-      style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
-  </div>
-  <div class="row">
-    <button id="startCamera" class="primary">Kamerayı Aç</button>
-    <button id="stopCamera" class="secondary">Kapat</button>
-  </div>
-  <p id="cameraStatus" class="small">Kamera henüz açılmadı.</p>
-  <div id="cameraStudentPanel" style="display:none;margin-top:12px">
-    <label for="cameraStudentSelect">Yüz algılandı. Öğrenciyi listeden seçin:</label>
-    <select id="cameraStudentSelect" style="width:100%;padding:12px;border:1px solid #ccd5dd;border-radius:10px;font-size:16px;background:white">
-      <option value="">Öğrenci seçin</option>
-    </select>
-    <p id="cameraStudentInfo" class="small">Öğrenci seçilince adı ve sınıfı burada görünecek.</p>
-    <button id="cameraMarkAttendance" class="primary" disabled>Bu öğrencinin yoklamasını kaydet</button>
-  </div>
-</section> <script>
+  <script>
 const RK='yemekhane_demo_v1',SK='yemekhane_students_v1';
 const today=()=>{let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const getRecords=()=>JSON.parse(localStorage.getItem(RK)||'[]'),putRecords=x=>localStorage.setItem(RK,JSON.stringify(x));
@@ -62,9 +41,9 @@ function markStudent(s){
   return true;
 }
 document.getElementById('search').oninput=renderStudents;
-document.getElementById('addStudent').onclick=()=>{let studentId=nextStudentId(),name=document.getElementById('newName').value.trim(),className=document.getElementById('newClass').value.trim();if(!name||!className){document.getElementById('notice').textContent='Lütfen adı soyadı ve sınıfını doldurun.';return}let a=getStudents();if(a.some(s=>s.studentId===studentId)){document.getElementById('notice').textContent='Numara çakışması oldu. Sayfayı yenileyip tekrar deneyin.';return}a.push({studentId,name,className});putStudents(a);document.getElementById('newName').value='';document.getElementById('newClass').value='';document.getElementById('search').value='';document.getElementById('notice').textContent=name+' öğrenci listesine '+studentId+' numarasıyla eklendi.';renderStudents();updateNextId()};
+document.getElementById('addStudent').onclick=()=>{let studentId=nextStudentId(),name=document.getElementById('newName').value.trim(),className=document.getElementById('newClass').value.trim();let parentPhone=document.getElementById('parentPhone').value.trim();if(!name||!className){document.getElementById('notice').textContent='Lütfen adı soyadı ve sınıfını doldurun.';return}let a=getStudents();if(a.some(s=>s.studentId===studentId)){document.getElementById('notice').textContent='Numara çakışması oldu. Sayfayı yenileyip tekrar deneyin.';return}a.push({studentId,name,className,parentPhone});putStudents(a);document.getElementById('newName').value='';document.getElementById('newClass').value='';document.getElementById('parentPhone').value='';document.getElementById('search').value='';document.getElementById('notice').textContent=name+' öğrenci listesine '+studentId+' numarasıyla eklendi.';renderStudents();updateNextId()};
 function downloadCsv(filename,rows){let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');let u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));let el=document.createElement('a');el.href=u;el.download=filename;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
-document.getElementById('exportStudents').onclick=()=>{let a=[['TIP','Öğrenci No','Ad Soyad','Sınıf'],...getStudents().map(x=>['OGRENCI',x.studentId,x.name,x.className])];downloadCsv('yemekhane_ogrenciler.csv',a)};
+document.getElementById('exportStudents').onclick=()=>{let a=[['TIP','Öğrenci No','Ad Soyad','Sınıf','Veli Telefonu'],...getStudents().map(x=>['OGRENCI',x.studentId,x.name,x.className,x.parentPhone||''])];downloadCsv('yemekhane_ogrenciler.csv',a)};
 document.getElementById('exportRecords').onclick=()=>{let a=[['TIP','Tarih','Öğrenci No','Ad Soyad','Sınıf'],...getRecords().map(x=>['YOKLAMA',x.date,x.studentId,x.name,x.className])];downloadCsv('yemekhane_yoklamalar.csv',a)};
 document.getElementById('backupBtn').onclick=()=>{
   const backup={app:'Yemekhane Yoklama',version:1,createdAt:new Date().toISOString(),students:getStudents(),records:getRecords()};
@@ -77,7 +56,7 @@ document.getElementById('backupBtn').onclick=()=>{
 document.getElementById('importBtn').onclick=()=>document.getElementById('file').click();
 function parseCsv(text){let rows=[],row=[],field='',quoted=false;for(let i=0;i<text.length;i++){let c=text[i],n=text[i+1];if(quoted){if(c==='"'&&n==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else{if(c==='"')quoted=true;else if(c==='; '||c===';'){row.push(field);field=''}else if(c===','){row.push(field);field=''}else if(c==='\n'){row.push(field);rows.push(row);row=[];field=''}else if(c!=='\r')field+=c}}row.push(field);if(row.some(x=>x!==''))rows.push(row);return rows}
 document.getElementById('file').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let text=(await f.text()).replace(/^\ufeff/,'');let rows=parseCsv(text);if(!rows.length)throw Error('Dosya boş.');let head=rows[0].map(x=>x.trim().toLocaleLowerCase('tr-TR'));let students=getStudents(),records=getRecords(),addedS=0,addedR=0;let isStudent=head.some(x=>x.includes('ad soyad'))&&head.some(x=>x.includes('sınıf'))&&!head.some(x=>x.includes('tarih'));let isRecord=head.some(x=>x.includes('tarih'))&&head.some(x=>x.includes('ad soyad'));
-for(let r of rows.slice(1)){if(isStudent){let id=r[1]||'',name=(r[2]||'').trim(),cls=(r[3]||'').trim();if(!name||!cls)continue;if(!students.some(x=>x.name.trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&x.className.trim().toLocaleLowerCase('tr-TR')===cls.toLocaleLowerCase('tr-TR'))){students.push({studentId:id||String(students.length+1).padStart(4,'0'),name,className:cls});addedS++}}else if(isRecord){let date=r[1]||r[0]||'',id=r[2]||r[1]||'',name=(r[3]||r[2]||'').trim(),cls=(r[4]||r[3]||'').trim();if(!date||!name||!cls)continue;let key=[date,name.toLocaleLowerCase('tr-TR'),cls.toLocaleLowerCase('tr-TR')].join('|');if(!records.some(x=>[x.date,x.name.toLocaleLowerCase('tr-TR'),x.className.toLocaleLowerCase('tr-TR')].join('|')===key)){records.push({date,studentId:id,name,className:cls});addedR++}}}
+for(let r of rows.slice(1)){if(isStudent){let id=r[1]||'',name=(r[2]||'').trim(),cls=(r[3]||'').trim();if(!name||!cls)continue;if(!students.some(x=>x.name.trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&x.className.trim().toLocaleLowerCase('tr-TR')===cls.toLocaleLowerCase('tr-TR'))){students.push({studentId:id||String(students.length+1).padStart(4,'0'),name,className:cls,parentPhone:(r[4]||'').trim()});addedS++}}else if(isRecord){let date=r[1]||r[0]||'',id=r[2]||r[1]||'',name=(r[3]||r[2]||'').trim(),cls=(r[4]||r[3]||'').trim();if(!date||!name||!cls)continue;let key=[date,name.toLocaleLowerCase('tr-TR'),cls.toLocaleLowerCase('tr-TR')].join('|');if(!records.some(x=>[x.date,x.name.toLocaleLowerCase('tr-TR'),x.className.toLocaleLowerCase('tr-TR')].join('|')===key)){records.push({date,studentId:id,name,className:cls});addedR++}}}
 if(isStudent){putStudents(students);document.getElementById('notice').textContent=addedS+' yeni öğrenci aktarıldı. Var olan öğrenciler korundu.';renderStudents();updateNextId()}else if(isRecord){putRecords(records);document.getElementById('notice').textContent=addedR+' yeni yoklama kaydı aktarıldı. Tekrar kayıtlar atlandı.';renderRecords();dailyReport()}else throw Error('Dosya biçimi tanınmadı. Öğrenci veya yoklama CSV dosyasını seçin.');
 }catch(err){document.getElementById('notice').textContent='Aktarım yapılamadı: '+err.message}e.target.value=''};
 function dailyReport(selectedDate){
@@ -153,117 +132,4 @@ dailyReport();
   let cameraStream=null;
   if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}renderStudents();renderRecords();updateNextId();
 </script>
-<script type="module">
-import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-
-const status = document.getElementById("cameraStatus");
-const video = document.getElementById("faceCamera");
-const canvas = document.getElementById("faceCanvas");
-const ctx = canvas.getContext("2d");
-const startButton = document.getElementById("startCamera");
-const stopButton = document.getElementById("stopCamera");
-
-let detector = null;
-let cameraStream = null;
-let running = false;
-let animationId = null;
-let starting = false;
-
-async function prepareDetector() {
-  if (detector) return;
-  status.textContent = "Yüz algılama modeli yükleniyor...";
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-  );
-  detector = await FaceDetector.createFromOptions(vision, {
-    baseOptions: { modelAssetPath: "./blaze_face_short_range.tflite" },
-    runningMode: "VIDEO"
-  });
-}
-
-function scan() {
-  if (!running) return;
-
-  if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
-    animationId = requestAnimationFrame(scan);
-    return;
-  }
-
-  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-  }
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const result = detector.detectForVideo(video, performance.now());
-
-  for (const detection of result.detections) {
-    const box = detection.boundingBox;
-    if (!box) continue;
-    ctx.strokeStyle = "#00e676";
-    ctx.lineWidth = Math.max(3, canvas.width / 180);
-    ctx.strokeRect(box.originX, box.originY, box.width, box.height);
-  }
-
-  status.textContent = result.detections.length
-    ? "Yüz algılandı. Öğrenciyi listeden seçin."
-    : "Henüz yüz algılanmadı.";
-  const panel = document.getElementById("cameraStudentPanel");
-  if (panel) {
-    panel.style.display = result.detections.length ? "block" : "none";
-    if (result.detections.length) refreshCameraStudentList();
-  }
-
-  animationId = requestAnimationFrame(scan);
-}
-
-startButton.addEventListener("click", async () => {
-  if (starting || running) return;
-  starting = true;
-  startButton.disabled = true;
-
-  try {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error("Bu tarayıcı kamera erişimini desteklemiyor. Safari üzerinden HTTPS adresini açın.");
-    }
-
-    status.textContent = "Kamera açılıyor...";
-    cameraStream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { facingMode: "user" }
-    });
-
-    video.srcObject = cameraStream;
-    await video.play();
-
-    await prepareDetector();
-
-    running = true;
-    status.textContent = "Kamera hazır. Yüz aranıyor...";
-    scan();
-  } catch (error) {
-    if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
-    cameraStream = null;
-    video.srcObject = null;
-    running = false;
-    status.textContent = "Kamera/algılama açılamadı: " + error.message;
-  } finally {
-    starting = false;
-    startButton.disabled = false;
-  }
-});
-
-stopButton.addEventListener("click", () => {
-  running = false;
-  if (animationId) cancelAnimationFrame(animationId);
-  animationId = null;
-
-  if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
-  cameraStream = null;
-  video.srcObject = null;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const panel = document.getElementById("cameraStudentPanel");
-  if (panel) panel.style.display = "none";
-  status.textContent = "Kamera kapatıldı.";
-});
-</script></body></html>
+</body></html>
