@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#173b57"><link rel="manifest" href="manifest.json"><title>Yemekhane Yoklama</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;color:#18212b;margin:0;padding:16px;max-width:620px;margin:auto}header{background:#173b57;color:white;padding:20px;border-radius:16px}h1{font-size:23px;margin:0 0 6px}.card{background:white;padding:16px;border-radius:15px;margin:14px 0;box-shadow:0 2px 10px #0001}label{display:block;font-weight:700;margin:12px 0 8px}input,select{width:100%;box-sizing:border-box;padding:14px;border:1px solid #ccd5dd;border-radius:10px;font-size:17px;background:white}.student{border:1px solid #dce3e8;border-radius:12px;padding:14px;margin-top:14px}.name{font-size:21px;font-weight:750}.muted,.small{color:#687684;font-size:13px}button{cursor:pointer}.primary{width:100%;padding:15px;background:#176b4b;color:white;border:0;border-radius:11px;font-size:16px;font-weight:700;margin-top:12px}.secondary{padding:12px;background:#e8eef3;color:#173b57;border:0;border-radius:10px;font-weight:650;flex:1}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}li{padding:7px 0;border-bottom:1px solid #eee}#notice{color:#176b4b;font-size:13px;min-height:18px}.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.addgrid .wide{grid-column:1/-1}.sectiontitle{font-size:18px;font-weight:750}.addcard{position:sticky;top:8px;z-index:20;border:1px solid #d7e0e7;box-shadow:0 5px 18px #0002;padding:12px 14px}.addcard .sectiontitle{font-size:16px}.addcard label{margin:7px 0 5px;font-size:13px}.addcard input{padding:10px 11px;font-size:16px}.addcard .primary{padding:11px;margin-top:9px}.addcard .small{margin:7px 0 0}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;color:#18212b;margin:0;padding:16px;max-width:620px;margin:auto}header{background:#173b57;color:white;padding:20px;border-radius:16px}h1{font-size:23px;margin:0 0 6px}.card{background:white;padding:16px;border-radius:15px;margin:14px 0;box-shadow:0 2px 10px #0001}label{display:block;font-weight:700;margin:12px 0 8px}input,select{width:100%;box-sizing:border-box;padding:14px;border:1px solid #ccd5dd;border-radius:10px;font-size:17px;background:white}.student{border:1px solid #dce3e8;border-radius:12px;padding:14px;margin-top:14px}.name{font-size:21px;font-weight:750}.muted,.small{color:#687684;font-size:13px}button{cursor:pointer}.primary{width:100%;padding:15px;background:#176b4b;color:white;border:0;border-radius:11px;font-size:16px;font-weight:700;margin-top:12px}.secondary{padding:12px;background:#e8eef3;color:#173b57;border:0;border-radius:10px;font-weight:650;flex:1}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}li{padding:7px 0;border-bottom:1px solid #eee}#notice{color:#176b4b;font-size:13px;min-height:18px}.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.addgrid .wide{grid-column:1/-1}.sectiontitle{font-size:18px;font-weight:750}.addcard{position:relative;z-index:1;border:1px solid #d7e0e7;box-shadow:0 5px 18px #0002;padding:12px 14px}.addcard .sectiontitle{font-size:16px}.addcard label{margin:7px 0 5px;font-size:13px}.addcard input{padding:10px 11px;font-size:16px}.addcard .primary{padding:11px;margin-top:9px}.addcard .small{margin:7px 0 0}
 </style></head><body>
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
 <section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A"></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Eklenen öğrenci bu telefonda saklanır. Diğer telefona ayrıca aktarılması gerekir.</p></section>
 <section class="card"><label for="search">Öğrenci ara</label><input id="search" placeholder="Adını söyleyin veya yazın" autocomplete="off"><p class="small">Sesle aramak için iPhone klavyesindeki mikrofon simgesini kullanın.</p><div id="results"></div><div id="notice"></div></section>
-<section class="card"><b>Bu telefondaki kayıtlar</b><p class="small">Öğrenciler ve yoklamalar bu cihazda saklanır. İki telefon arasında CSV ile aktarılır; otomatik eşitlenmez.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
+<section class="card"><b>Bu telefondaki kayıtlar</b><p class="small">Öğrenciler ve yoklamalar bu cihazda saklanır. İki telefon arasında CSV ile aktarılır; otomatik eşitlenmez.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button><button id="backupBtn" class="secondary">Tüm verileri yedekle</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
  <section class="card">
   <b>Kamera Testi</b>
   <div style="position:relative;width:100%;margin-top:12px;background:#111;border-radius:12px;overflow:hidden;aspect-ratio:4/3">
@@ -47,33 +47,70 @@ function deleteRecord(index){
 let a=getRecords().map((x,i)=>({...x,_i:i})).sort((x,y)=>y.date.localeCompare(x.date));
 document.getElementById('records').innerHTML=a.length?'<ul>'+a.map(x=>'<li>'+x.date+' — '+escapeHtml(x.name)+' ('+escapeHtml(x.className)+') <button onclick="deleteRecord('+x._i+')">Sil</button></li>').join('')+'</ul>':'<p class="small">Henüz kayıt yok.</p>';
 }function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function markStudent(s){let a=getRecords();a.push({date:today(),studentId:s.studentId,name:s.name,className:s.className});putRecords(a);document.getElementById('notice').textContent=s.name+' için kayıt bu telefona kaydedildi.';renderRecords()}
+function markStudent(s){
+  let a=getRecords();
+  const duplicate=a.some(x=>x.date===today()&&String(x.studentId)===String(s.studentId));
+  if(duplicate){
+    document.getElementById('notice').textContent=s.name+' bugün zaten yoklamaya kaydedilmiş.';
+    return false;
+  }
+  a.push({date:today(),studentId:s.studentId,name:s.name,className:s.className});
+  putRecords(a);
+  document.getElementById('notice').textContent=s.name+' için kayıt bu telefona kaydedildi.';
+  renderRecords();
+  dailyReport();
+  return true;
+}
 document.getElementById('search').oninput=renderStudents;
 document.getElementById('addStudent').onclick=()=>{let studentId=nextStudentId(),name=document.getElementById('newName').value.trim(),className=document.getElementById('newClass').value.trim();if(!name||!className){document.getElementById('notice').textContent='Lütfen adı soyadı ve sınıfını doldurun.';return}let a=getStudents();if(a.some(s=>s.studentId===studentId)){document.getElementById('notice').textContent='Numara çakışması oldu. Sayfayı yenileyip tekrar deneyin.';return}a.push({studentId,name,className});putStudents(a);document.getElementById('newName').value='';document.getElementById('newClass').value='';document.getElementById('search').value='';document.getElementById('notice').textContent=name+' öğrenci listesine '+studentId+' numarasıyla eklendi.';renderStudents();updateNextId()};
 function downloadCsv(filename,rows){let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');let u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));let el=document.createElement('a');el.href=u;el.download=filename;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
 document.getElementById('exportStudents').onclick=()=>{let a=[['TIP','Öğrenci No','Ad Soyad','Sınıf'],...getStudents().map(x=>['OGRENCI',x.studentId,x.name,x.className])];downloadCsv('yemekhane_ogrenciler.csv',a)};
 document.getElementById('exportRecords').onclick=()=>{let a=[['TIP','Tarih','Öğrenci No','Ad Soyad','Sınıf'],...getRecords().map(x=>['YOKLAMA',x.date,x.studentId,x.name,x.className])];downloadCsv('yemekhane_yoklamalar.csv',a)};
+document.getElementById('backupBtn').onclick=()=>{
+  const backup={app:'Yemekhane Yoklama',version:1,createdAt:new Date().toISOString(),students:getStudents(),records:getRecords()};
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='yemekhane_tam_yedek.json';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  document.getElementById('notice').textContent='Öğrenci ve yoklama verilerinin tam yedeği indirildi.';
+};
 document.getElementById('importBtn').onclick=()=>document.getElementById('file').click();
 function parseCsv(text){let rows=[],row=[],field='',quoted=false;for(let i=0;i<text.length;i++){let c=text[i],n=text[i+1];if(quoted){if(c==='"'&&n==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else{if(c==='"')quoted=true;else if(c==='; '||c===';'){row.push(field);field=''}else if(c===','){row.push(field);field=''}else if(c==='\n'){row.push(field);rows.push(row);row=[];field=''}else if(c!=='\r')field+=c}}row.push(field);if(row.some(x=>x!==''))rows.push(row);return rows}
 document.getElementById('file').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let text=(await f.text()).replace(/^\ufeff/,'');let rows=parseCsv(text);if(!rows.length)throw Error('Dosya boş.');let head=rows[0].map(x=>x.trim().toLocaleLowerCase('tr-TR'));let students=getStudents(),records=getRecords(),addedS=0,addedR=0;let isStudent=head.some(x=>x.includes('ad soyad'))&&head.some(x=>x.includes('sınıf'))&&!head.some(x=>x.includes('tarih'));let isRecord=head.some(x=>x.includes('tarih'))&&head.some(x=>x.includes('ad soyad'));
 for(let r of rows.slice(1)){if(isStudent){let id=r[1]||'',name=(r[2]||'').trim(),cls=(r[3]||'').trim();if(!name||!cls)continue;if(!students.some(x=>x.name.trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&x.className.trim().toLocaleLowerCase('tr-TR')===cls.toLocaleLowerCase('tr-TR'))){students.push({studentId:id||String(students.length+1).padStart(4,'0'),name,className:cls});addedS++}}else if(isRecord){let date=r[1]||r[0]||'',id=r[2]||r[1]||'',name=(r[3]||r[2]||'').trim(),cls=(r[4]||r[3]||'').trim();if(!date||!name||!cls)continue;let key=[date,name.toLocaleLowerCase('tr-TR'),cls.toLocaleLowerCase('tr-TR')].join('|');if(!records.some(x=>[x.date,x.name.toLocaleLowerCase('tr-TR'),x.className.toLocaleLowerCase('tr-TR')].join('|')===key)){records.push({date,studentId:id,name,className:cls});addedR++}}}
-if(isStudent){putStudents(students);document.getElementById('notice').textContent=addedS+' yeni öğrenci aktarıldı. Var olan öğrenciler korundu.';renderStudents();updateNextId()}else if(isRecord){putRecords(records);document.getElementById('notice').textContent=addedR+' yeni yoklama kaydı aktarıldı. Tekrar kayıtlar atlandı.';renderRecords()}else throw Error('Dosya biçimi tanınmadı. Öğrenci veya yoklama CSV dosyasını seçin.');
+if(isStudent){putStudents(students);document.getElementById('notice').textContent=addedS+' yeni öğrenci aktarıldı. Var olan öğrenciler korundu.';renderStudents();updateNextId()}else if(isRecord){putRecords(records);document.getElementById('notice').textContent=addedR+' yeni yoklama kaydı aktarıldı. Tekrar kayıtlar atlandı.';renderRecords();dailyReport()}else throw Error('Dosya biçimi tanınmadı. Öğrenci veya yoklama CSV dosyasını seçin.');
 }catch(err){document.getElementById('notice').textContent='Aktarım yapılamadı: '+err.message}e.target.value=''};
-function dailyReport(){
- const a=getRecords().filter(x=>x.date===today());
- const unique=[...new Map(a.map(x=>[(x.name+'|'+x.className).toLocaleLowerCase('tr-TR'),x])).values()];
- const groups={};
- unique.forEach(x=>{
- const k=String(x.className||'').replace(/[\s-]/g,'').toLocaleUpperCase('tr-TR');
- groups[k]=(groups[k]||0)+1;
-});
- let html='<section class="card"><div class="sectiontitle">Bugünün Yemek Raporu</div><h2>Toplam gelen: '+unique.length+'</h2>';
-Object.keys(groups).sort().forEach(k=>{const label=k.replace(/^(\d+)([A-ZÇĞİÖŞÜ])$/,'$1-$2');html+='<p>'+escapeHtml(label)+': <b>'+groups[k]+'</b> öğrenci</p>';});
- html+='</section>';
- let old=document.getElementById('dailyReport');
- if(old)old.remove();
- let d=document.createElement('div');d.id='dailyReport';d.innerHTML=html;
- document.body.appendChild(d);
+function dailyReport(selectedDate){
+  const reportDate=selectedDate||today();
+  const all=getRecords();
+  const dayRows=all.filter(x=>x.date===reportDate);
+  const unique=[...new Map(dayRows.map(x=>[(String(x.studentId||'')+'|'+x.name+'|'+x.className).toLocaleLowerCase('tr-TR'),x])).values()];
+  const groups={};
+  unique.forEach(x=>{
+    const label=String(x.className||'').trim()||'Sınıf belirtilmemiş';
+    groups[label]=(groups[label]||0)+1;
+  });
+  const dateObj=new Date(reportDate+'T12:00:00');
+  const monday=new Date(dateObj);
+  const day=(monday.getDay()+6)%7;
+  monday.setDate(monday.getDate()-day);
+  const weekStart=monday.getFullYear()+'-'+String(monday.getMonth()+1).padStart(2,'0')+'-'+String(monday.getDate()).padStart(2,'0');
+  const weekRows=all.filter(x=>x.date>=weekStart&&x.date<=reportDate);
+  const weekUnique=new Set(weekRows.map(x=>[x.date,x.studentId||x.name,x.className].join('|')));
+  let report='<section class="card"><div class="sectiontitle">Yemek Raporu</div>'+
+    '<label for="reportDate">Rapor tarihi</label><input id="reportDate" type="date" value="'+reportDate+'">'+
+    '<h2>Toplam gelen: '+unique.length+'</h2>'+
+    '<p class="small">Haftanın başlangıcından seçilen güne kadar: '+weekUnique.size+' yoklama kaydı</p>';
+  Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr')).forEach(k=>{
+    report+='<p>'+escapeHtml(k)+': <b>'+groups[k]+'</b> öğrenci</p>';
+  });
+  if(!unique.length)report+='<p class="small">Bu tarihte kayıt bulunamadı.</p>';
+  report+='</section>';
+  let old=document.getElementById('dailyReport');
+  if(old)old.remove();
+  let d=document.createElement('div');d.id='dailyReport';d.innerHTML=report;
+  document.body.appendChild(d);
+  document.getElementById('reportDate').addEventListener('change',e=>dailyReport(e.target.value));
 }
 
 function refreshCameraStudentList(){
