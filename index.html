@@ -17,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
   </select>
   <div id="waClassWrap" style="display:block;margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px">
     <label for="waClass">Sınıf seçimi (Alıcı seçimi bölümünde “Sınıf seç” seçiliyken kullanılır)</label>
-    <select id="waClass"></select>
+    <select id="waClass"></select><p id="waClassCount" class="small" aria-live="polite"></p>
   </div>
   <div id="waStudentWrap" style="display:block;margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px">
     <label for="waStudent">Öğrenci seçimi (Alıcı seçimi bölümünde “Öğrenci seç” seçiliyken kullanılır)</label>
@@ -132,23 +132,31 @@ function refreshWhatsAppSelectors(){
   });
   if(classes.includes(oldClass))waClass.value=oldClass;
 
+  const classMode=waMode.value==='class' && !!waClass.value;
+  const visibleStudents=classMode
+    ? students.filter(s=>String(s.className||'').trim()===waClass.value)
+    : students;
   waStudent.innerHTML='';
   const studentPrompt=document.createElement('option');
   studentPrompt.value='';
-  studentPrompt.textContent=students.length?'Öğrenci seçin':'Kayıtlı öğrenci bulunamadı';
+  studentPrompt.textContent=visibleStudents.length?'Öğrenci seçin':'Bu sınıfta öğrenci bulunamadı';
   waStudent.appendChild(studentPrompt);
-  students.forEach(s=>{
+  visibleStudents.forEach(s=>{
     const option=document.createElement('option');
     option.value=String(s.studentId);
     option.textContent=String(s.name||'İsimsiz öğrenci')+' — '+String(s.className||'Sınıf yok')+' · No: '+String(s.studentId||'');
     waStudent.appendChild(option);
   });
-  if(students.some(s=>String(s.studentId)===oldStudent))waStudent.value=oldStudent;
+  if(visibleStudents.some(s=>String(s.studentId)===oldStudent))waStudent.value=oldStudent;
 
   waClassWrap.style.display='block';
   waStudentWrap.style.display='block';
   const status=document.getElementById('waInfo');
   if(status && !students.length)status.textContent='Öğrenci kaydı bulunamadı. Önce öğrenci listesini kontrol edin.';
+  const classCount=document.getElementById('waClassCount');
+  if(classCount)classCount.textContent=classMode
+    ? waClass.value+' sınıfında '+visibleStudents.length+' öğrenci listelendi.'
+    : '';
 }
 function refreshWhatsAppRecipients(reset=true){
   refreshWhatsAppSelectors();
@@ -166,7 +174,7 @@ waMode.addEventListener('change',()=>{
   waStudentWrap.style.display='block';
   refreshWhatsAppRecipients(true);
 });
-waClass.addEventListener('change',()=>refreshWhatsAppRecipients(true));
+waClass.addEventListener('change',()=>{waStudent.value='';refreshWhatsAppSelectors();refreshWhatsAppRecipients(true);});
 waStudent.addEventListener('change',()=>refreshWhatsAppRecipients(true));
 waClass.addEventListener('focus',refreshWhatsAppSelectors);
 waStudent.addEventListener('focus',refreshWhatsAppSelectors);
@@ -175,7 +183,7 @@ waClassWrap.style.display='block';
 waStudentWrap.style.display='block';
 document.getElementById('waStudentSearch').addEventListener('input',()=>{
   const query=document.getElementById('waStudentSearch').value.trim().toLocaleLowerCase('tr-TR');
-  const students=sortedStudents().filter(s=>(String(s.name||'')+' '+String(s.className||'')+' '+String(s.studentId||'')).toLocaleLowerCase('tr-TR').includes(query));
+  const students=sortedStudents().filter(s=>(waMode.value!=='class'||!waClass.value||String(s.className||'').trim()===waClass.value)&&(String(s.name||'')+' '+String(s.className||'')+' '+String(s.studentId||'')).toLocaleLowerCase('tr-TR').includes(query));
   const current=waStudent.value;
   waStudent.innerHTML='';
   const prompt=document.createElement('option');
