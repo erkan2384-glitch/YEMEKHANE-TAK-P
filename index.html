@@ -92,44 +92,8 @@ function dailyReport(selectedDate){
   document.getElementById('reportDate').addEventListener('change',e=>dailyReport(e.target.value));
 }
 
-function refreshCameraStudentList(){
-  const select=document.getElementById('cameraStudentSelect');
-  if(!select)return;
-  const current=select.value;
-  const students=getStudents().slice().sort((a,b)=>
-    a.name.localeCompare(b.name,'tr',{sensitivity:'base'})
-  );
-  select.innerHTML='<option value="">Öğrenci seçin</option>'+students.map(s=>
-    '<option value="'+escapeHtml(s.studentId)+'">'+escapeHtml(s.name)+' — '+escapeHtml(s.className)+'</option>'
-  ).join('');
-  if(students.some(s=>String(s.studentId)===current))select.value=current;
-}
-document.getElementById('cameraStudentSelect').addEventListener('change',()=>{
-  const id=document.getElementById('cameraStudentSelect').value;
-  const student=getStudents().find(s=>String(s.studentId)===id);
-  const info=document.getElementById('cameraStudentInfo');
-  const button=document.getElementById('cameraMarkAttendance');
-  info.textContent=student?student.name+' — '+student.className:'Öğrenci seçilince adı ve sınıfı burada görünecek.';
-  button.disabled=!student;
-});
-document.getElementById('cameraMarkAttendance').addEventListener('click',()=>{
-  const id=document.getElementById('cameraStudentSelect').value;
-  const student=getStudents().find(s=>String(s.studentId)===id);
-  if(!student)return;
-  const already=getRecords().some(r=>r.date===today()&&String(r.studentId)===String(student.studentId));
-  if(already){
-    document.getElementById('cameraStudentInfo').textContent=student.name+' — '+student.className+' · Bugün zaten kaydedilmiş.';
-    return;
-  }
-  markStudent(student);
-  document.getElementById('cameraStudentInfo').textContent=student.name+' — '+student.className+' · Yoklama kaydedildi.';
-  document.getElementById('cameraStudentSelect').value='';
-  document.getElementById('cameraMarkAttendance').disabled=true;
-  refreshCameraStudentList();
-});
 
 dailyReport();
-  let cameraStream=null;
   if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}renderStudents();renderRecords();updateNextId();
 </script>
 </body></html>
