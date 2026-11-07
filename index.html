@@ -4,6 +4,14 @@
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;color:#18212b;margin:0;padding:16px;max-width:620px;margin:auto}header{background:#173b57;color:white;padding:20px;border-radius:16px}h1{font-size:23px;margin:0 0 6px}.card{background:white;padding:16px;border-radius:15px;margin:14px 0;box-shadow:0 2px 10px #0001}label{display:block;font-weight:700;margin:12px 0 8px}input,select{width:100%;box-sizing:border-box;padding:14px;border:1px solid #ccd5dd;border-radius:10px;font-size:17px;background:white}.student{border:1px solid #dce3e8;border-radius:12px;padding:14px;margin-top:14px}.name{font-size:21px;font-weight:750}.muted,.small{color:#687684;font-size:13px}button{cursor:pointer}.primary{width:100%;padding:15px;background:#176b4b;color:white;border:0;border-radius:11px;font-size:16px;font-weight:700;margin-top:12px}.secondary{padding:12px;background:#e8eef3;color:#173b57;border:0;border-radius:10px;font-weight:650;flex:1}.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}li{padding:7px 0;border-bottom:1px solid #eee}#notice{color:#176b4b;font-size:13px;min-height:18px}.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.addgrid .wide{grid-column:1/-1}.sectiontitle{font-size:18px;font-weight:750}.addcard{position:relative;z-index:1;border:1px solid #d7e0e7;box-shadow:0 5px 18px #0002;padding:12px 14px}.addcard .sectiontitle{font-size:16px}.addcard label{margin:7px 0 5px;font-size:13px}.addcard input{padding:10px 11px;font-size:16px}.addcard .primary{padding:11px;margin-top:9px}.addcard .small{margin:7px 0 0}#results{max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:3px}#waStudentWrap,#waClassWrap{margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px}#waStudentSearch,#waStudent,#waClass{display:block;min-height:46px}
 </style></head><body>
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
+<section class="card" id="cloudCard">
+  <div class="sectiontitle">Bulut hesabı · Supabase</div>
+  <p class="small">Öğrenci listesini güvenli hesabınızla buluttan yükleyin. Yoklama kayıtları şimdilik bu cihazda kalır.</p>
+  <label for="cloudEmail">E-posta</label><input id="cloudEmail" type="email" autocomplete="username" placeholder="Supabase hesabınızın e-postası">
+  <label for="cloudPassword">Şifre</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Supabase şifreniz">
+  <button id="cloudLogin" class="primary">Giriş yap ve öğrencileri eşitle</button>
+  <p id="cloudStatus" class="small" aria-live="polite">Henüz bağlanmadı.</p>
+</section>
 <section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A"></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div><div class="wide"><label for="parentPhone">Veli telefon numarası</label><input id="parentPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Örn. 05xx xxx xx xx"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Eklenen öğrenci bu telefonda saklanır. Diğer telefona ayrıca aktarılması gerekir.</p></section>
 <section class="card"><label for="search">Öğrenci ara</label><input id="search" placeholder="Adını söyleyin veya yazın" autocomplete="off"><p class="small">Sesle aramak için iPhone klavyesindeki mikrofon simgesini kullanın.</p><div id="results"></div><div id="notice"></div></section>
 
@@ -32,6 +40,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
 </section>
 
 <section class="card"><b>Bu telefondaki kayıtlar</b><p class="small">Öğrenciler ve yoklamalar bu cihazda saklanır. İki telefon arasında CSV ile aktarılır; otomatik eşitlenmez.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button><button id="backupBtn" class="secondary">Tüm verileri yedekle</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
 const RK='yemekhane_demo_v1',SK='yemekhane_students_v1';
 const today=()=>{let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
@@ -278,6 +287,44 @@ function dailyReport(selectedDate){
   document.body.appendChild(d);
   document.getElementById('reportDate').addEventListener('change',e=>dailyReport(e.target.value));
 }
+
+// Supabase bulut bağlantısı: yalnızca oturum açmış ve RLS ile izin verilmiş kullanıcı erişebilir.
+const SUPABASE_URL='https://gkfcibfetpespnopyeaz.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_T67X_h_Ia68q8Z81RlCqmQ_HDFBIrCD';
+const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const cloudStatus=document.getElementById('cloudStatus');
+document.getElementById('cloudLogin').addEventListener('click',async()=>{
+  const email=document.getElementById('cloudEmail').value.trim();
+  const password=document.getElementById('cloudPassword').value;
+  const button=document.getElementById('cloudLogin');
+  if(!email||!password){cloudStatus.textContent='E-posta ve şifreyi girin.';return;}
+  button.disabled=true;cloudStatus.textContent='Giriş yapılıyor…';
+  try{
+    const login=await cloudClient.auth.signInWithPassword({email,password});
+    if(login.error)throw login.error;
+    cloudStatus.textContent='Giriş başarılı. Öğrenciler yükleniyor…';
+    const result=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,veli_telefon').order('id');
+    if(result.error)throw result.error;
+    const cloudStudents=(result.data||[]).map(row=>({
+      studentId:String(row.id),
+      name:row.ogrenci_adi||'',
+      className:row.sinif||'',
+      parentPhone:row.veli_telefon||''
+    })).filter(x=>x.name&&x.className);
+    if(!cloudStudents.length)throw new Error('Bulut tablosunda öğrenci bulunamadı.');
+    putStudents(cloudStudents);
+    renderStudents();updateNextId();refreshWhatsAppRecipients(true);
+    document.getElementById('cloudPassword').value='';
+    cloudStatus.textContent=cloudStudents.length+' öğrenci buluttan yüklendi. Yoklama kayıtları bu cihazda korunuyor.';
+    document.getElementById('notice').textContent='Bulut öğrenci listesi eşitlendi.';
+  }catch(error){
+    cloudStatus.textContent='Bağlantı hatası: '+(error.message||'Bilinmeyen hata')+' · Mevcut cihaz kayıtları korunuyor.';
+  }finally{button.disabled=false;}
+});
+cloudClient.auth.getSession().then(({data})=>{
+  if(data.session){document.getElementById('cloudEmail').value=data.session.user.email||'';cloudStatus.textContent='Oturum açık. Öğrencileri eşitlemek için düğmeye basın.';}
+});
+
 
 
 dailyReport();
