@@ -83,6 +83,7 @@ function deleteRecord(index){
   records.splice(index,1);
   putRecords(records);
   renderRecords();
+  (async()=>{const {data}=await cloudClient.auth.getSession();if(data.session){await cloudClient.from('yoklamalar').delete().eq('attendance_date',a[index]?.date||'').eq('student_id',String(a[index]?.studentId||''));}})();
 }function renderRecords(){
 let a=getRecords().map((x,i)=>({...x,_i:i})).sort((x,y)=>y.date.localeCompare(x.date));
 document.getElementById('records').innerHTML=a.length?'<ul>'+a.map(x=>'<li>'+x.date+' — '+escapeHtml(x.name)+' ('+escapeHtml(x.className)+') <button onclick="deleteRecord('+x._i+')">Sil</button></li>').join('')+'</ul>':'<p class="small">Henüz kayıt yok.</p>';
@@ -96,6 +97,7 @@ function markStudent(s){
   }
   a.push({date:today(),studentId:s.studentId,name:s.name,className:s.className});
   putRecords(a);
+  syncAttendanceCloud();
   document.getElementById('notice').textContent=s.name+' için kayıt bu telefona kaydedildi.';
   renderRecords();
   return true;
@@ -292,6 +294,40 @@ function dailyReport(selectedDate){
 const SUPABASE_URL='https://gkfcibfetpespnopyeaz.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_T67X_h_Ia68q8Z81RlCqmQ_HDFBIrCD';
 const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+let cloudSyncBusy=false;
+async function syncAttendanceCloud(){
+  const {data:sessionData}=await cloudClient.auth.getSession();
+  if(!sessionData.session)return;
+  if(cloudSyncBusy)return;
+  cloudSyncBusy=true;
+  try{
+    const local=getRecords();
+    if(local.length){
+      const payload=local.map(x=>({
+        attendance_date:x.date,
+        student_id:String(x.studentId||''),
+        student_name:String(x.name||''),
+        class_name:String(x.className||'')
+      })).filter(x=>x.attendance_date&&x.student_id&&x.student_name&&x.class_name);
+      if(payload.length){
+        const saved=await cloudClient.from('yoklamalar').upsert(payload,{onConflict:'attendance_date,student_id,created_by'});
+        if(saved.error)throw saved.error;
+      }
+    }
+    const result=await cloudClient.from('yoklamalar').select('attendance_date,student_id,student_name,class_name').order('attendance_date',{ascending:false});
+    if(result.error)throw result.error;
+    const merged=new Map();
+    [...result.data||[],...local.map(x=>({attendance_date:x.date,student_id:x.studentId,student_name:x.name,class_name:x.className}))].forEach(x=>{
+      const key=[x.attendance_date,x.student_id,x.student_name,x.class_name].join('|');
+      merged.set(key,{date:x.attendance_date,studentId:String(x.student_id),name:x.student_name,className:x.class_name});
+    });
+    putRecords([...merged.values()]);
+    renderRecords();dailyReport();
+    cloudStatus.textContent='Yoklama kayıtları da bulutla eşitlendi.';
+  }catch(error){
+    cloudStatus.textContent='Öğrenci listesi bağlı; yoklama eşitleme hatası: '+(error.message||'Bilinmeyen hata');
+  }finally{cloudSyncBusy=false;}
+}
 const cloudStatus=document.getElementById('cloudStatus');
 document.getElementById('cloudLogin').addEventListener('click',async()=>{
   const email=document.getElementById('cloudEmail').value.trim();
@@ -315,7 +351,8 @@ document.getElementById('cloudLogin').addEventListener('click',async()=>{
     putStudents(cloudStudents);
     renderStudents();updateNextId();refreshWhatsAppRecipients(true);
     document.getElementById('cloudPassword').value='';
-    cloudStatus.textContent=cloudStudents.length+' öğrenci buluttan yüklendi. Yoklama kayıtları bu cihazda korunuyor.';
+    cloudStatus.textContent=cloudStudents.length+' öğrenci buluttan yüklendi.';
+    await syncAttendanceCloud();
     document.getElementById('notice').textContent='Bulut öğrenci listesi eşitlendi.';
   }catch(error){
     cloudStatus.textContent='Bağlantı hatası: '+(error.message||'Bilinmeyen hata')+' · Mevcut cihaz kayıtları korunuyor.';
