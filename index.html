@@ -80,11 +80,22 @@ function renderStudents(){let q=document.getElementById('search').value.trim().t
 function deleteRecord(index){
   if(!confirm('Bu yoklama kaydını silmek istiyor musunuz?')) return;
   const records=getRecords();
+  const removed=records[index];
+  if(!removed)return;
   records.splice(index,1);
   putRecords(records);
   renderRecords();
-  (async()=>{const {data}=await cloudClient.auth.getSession();if(data.session){await cloudClient.from('yoklamalar').delete().eq('attendance_date',a[index]?.date||'').eq('student_id',String(a[index]?.studentId||''));}})();
-}function renderRecords(){
+  (async()=>{
+    const {data}=await cloudClient.auth.getSession();
+    if(data.session){
+      await cloudClient.from('yoklamalar').delete()
+        .eq('attendance_date',removed.date)
+        .eq('student_id',String(removed.studentId||''))
+        .eq('created_by',data.session.user.id);
+    }
+  })();
+}
+function renderRecords(){
 let a=getRecords().map((x,i)=>({...x,_i:i})).sort((x,y)=>y.date.localeCompare(x.date));
 document.getElementById('records').innerHTML=a.length?'<ul>'+a.map(x=>'<li>'+x.date+' — '+escapeHtml(x.name)+' ('+escapeHtml(x.className)+') <button onclick="deleteRecord('+x._i+')">Sil</button></li>').join('')+'</ul>':'<p class="small">Henüz kayıt yok.</p>';
 }function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -302,12 +313,14 @@ async function syncAttendanceCloud(){
   cloudSyncBusy=true;
   try{
     const local=getRecords();
+    const ownerId=sessionData.session.user.id;
     if(local.length){
       const payload=local.map(x=>({
         attendance_date:x.date,
         student_id:String(x.studentId||''),
         student_name:String(x.name||''),
-        class_name:String(x.className||'')
+        class_name:String(x.className||''),
+        created_by:ownerId
       })).filter(x=>x.attendance_date&&x.student_id&&x.student_name&&x.class_name);
       if(payload.length){
         const saved=await cloudClient.from('yoklamalar').upsert(payload,{onConflict:'attendance_date,student_id,created_by'});
