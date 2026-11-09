@@ -1,4 +1,4 @@
-const CACHE='yemekhane-shell-v13';
+const CACHE='yemekhane-shell-v14';
 const FILES=[
   './',
   './index.html',
