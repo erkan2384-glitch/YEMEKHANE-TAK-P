@@ -76,8 +76,38 @@ function excelVeliTelefonlariniUygula(){
 
 function nextStudentId(){let ids=getStudents().map(s=>parseInt(String(s.studentId).replace(/\D/g,''),10)).filter(Number.isFinite);let n=(ids.length?Math.max(...ids):0)+1;return String(n).padStart(4,'0')}
 function updateNextId(){document.getElementById('nextId').textContent=nextStudentId()}
-function renderStudents(){let q=document.getElementById('search').value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById('results');box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div><button class="primary attendance-btn" data-id="${encodeURIComponent(s.studentId)}">Bugün geldi olarak kaydet</button><button class="secondary delete-student-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button></div>`).join(''):'<p class="small">Öğrenci bulunamadı. Yeni Öğrenci Ekle bölümünden ekleyebilirsiniz.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;el.querySelector('.attendance-btn').onclick=()=>markStudent(students[i]);el.querySelector('.delete-student-btn').onclick=()=>deleteStudent(students[i])})}
-async function deleteStudent(student){
+function renderStudents(){let q=document.getElementById('search').value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById('results');box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div><button class="primary attendance-btn" data-id="${encodeURIComponent(s.studentId)}">Bugün geldi olarak kaydet</button><button class="secondary monthly-report-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary delete-student-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button></div>`).join(''):'<p class="small">Öğrenci bulunamadı. Yeni Öğrenci Ekle bölümünden ekleyebilirsiniz.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;el.querySelector('.attendance-btn').onclick=()=>markStudent(students[i]);el.querySelector('.monthly-report-btn').onclick=()=>toggleStudentMonthlyReport(el,students[i]);el.querySelector('.delete-student-btn').onclick=()=>deleteStudent(students[i])})}
+async function toggleStudentMonthlyReport(card,student){
+  const panel=card.querySelector('.student-monthly-report');
+  if(!panel)return;
+  if(panel.style.display==='block'){panel.style.display='none';return;}
+  const now=new Date();
+  const month=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  panel.innerHTML='<label>Ay seçin</label><input class="student-report-month" type="month" value="'+month+'"><div class="student-report-result" aria-live="polite"></div>';
+  panel.style.display='block';
+  const picker=panel.querySelector('.student-report-month');
+  const result=panel.querySelector('.student-report-result');
+  const render=()=>{
+    const selectedMonth=picker.value;
+    if(!selectedMonth){result.innerHTML='<p class="small">Lütfen ay seçin.</p>';return;}
+    const dates=[...new Set(getRecords()
+      .filter(x=>String(x.studentId)===String(student.studentId)&&String(x.date||'').slice(0,7)===selectedMonth)
+      .map(x=>String(x.date)))].sort();
+    const weekdays=dates.filter(date=>{
+      const day=new Date(date+'T12:00:00').getDay();
+      return day!==0&&day!==6;
+    });
+    result.innerHTML='<h3 style="font-size:22px;margin:12px 0 4px">'+weekdays.length+' iş günü kullandı</h3>'+
+      '<p class="small" style="margin:0 0 8px">'+selectedMonth+' · '+student.name+'</p>'+
+      (weekdays.length
+        ? '<p style="margin:0 0 8px"><b>Geldiği tarihler:</b><br>'+weekdays.map(escapeHtml).join(', ')+'</p>'
+        : '<p class="small">Seçilen ayda hafta içi yoklama kaydı bulunamadı.</p>')+
+      '<p class="small">Yalnızca hafta içindeki kayıtlı yoklama günleri sayılır. Resmî tatiller ayrıca çıkarılmaz.</p>';
+  };
+  picker.addEventListener('change',render);
+  render();
+}
+function deleteStudent(student){
   if(!confirm(student.name+' ('+student.className+') kaydını öğrenci listesinden silmek istiyor musunuz?\n\nYoklama geçmişi korunacaktır. Bu işlem diğer telefonların listesinden de kaldırır.'))return;
   const buttons=[...document.querySelectorAll('.delete-student-btn')];
   buttons.forEach(b=>b.disabled=true);
