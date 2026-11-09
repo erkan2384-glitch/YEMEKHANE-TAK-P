@@ -6,7 +6,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
 <section class="card" id="cloudCard">
   <div class="sectiontitle">Bulut hesabı · Supabase</div>
-  <p class="small">Öğrenci listesini güvenli hesabınızla buluttan yükleyin. Yoklama kayıtları şimdilik bu cihazda kalır.</p>
+  <p class="small">Aynı hesapla giriş yapan telefonların yoklama kayıtları bulut üzerinden birleştirilir. Kayıtlar önce telefona yazılır, ardından buluta eşitlenir.</p>
   <label for="cloudEmail">E-posta</label><input id="cloudEmail" type="email" autocomplete="username" placeholder="Supabase hesabınızın e-postası">
   <label for="cloudPassword">Şifre</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Supabase şifreniz">
   <button id="cloudLogin" class="primary">Giriş yap ve öğrencileri eşitle</button>
@@ -39,7 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f3f6f8;
   <p class="small">Her veli için WhatsApp sohbeti ayrı açılır. Mesajı göndermek için WhatsApp içindeki Gönder düğmesine basmanız gerekir. Telefonu eksik olan öğrenciler atlanır.</p>
 </section>
 
-<section class="card"><b>Bu telefondaki kayıtlar</b><p class="small">Öğrenciler ve yoklamalar bu cihazda saklanır. İki telefon arasında CSV ile aktarılır; otomatik eşitlenmez.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button><button id="backupBtn" class="secondary">Tüm verileri yedekle</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
+<section class="card"><b>Yoklama kayıtları</b><p class="small">Kayıtlar bu telefonda korunur ve aynı hesaba bağlı cihazlarla bulutta birleştirilir. Bulut durumunu üst bölümden kontrol edin.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button><button id="backupBtn" class="secondary">Tüm verileri yedekle</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
 const RK='yemekhane_demo_v1',SK='yemekhane_students_v1';
@@ -307,15 +307,23 @@ const SUPABASE_URL='https://gkfcibfetpespnopyeaz.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_T67X_h_Ia68q8Z81RlCqmQ_HDFBIrCD';
 const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let cloudSyncBusy=false;
+let cloudSyncPending=false;
 async function syncAttendanceCloud(){
-  const {data:sessionData}=await cloudClient.auth.getSession();
-  if(!sessionData.session)return;
+  cloudSyncPending=true;
   if(cloudSyncBusy)return;
   cloudSyncBusy=true;
+  cloudStatus.textContent='Yoklama kayıtları bulutla eşitleniyor…';
   try{
-    const local=getRecords();
-    const ownerId=sessionData.session.user.id;
-    if(local.length){
+    while(cloudSyncPending){
+      cloudSyncPending=false;
+      const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+      if(sessionError)throw sessionError;
+      if(!sessionData.session){
+        cloudStatus.textContent='Yoklama eşitlemek için bulut hesabına giriş yapın.';
+        break;
+      }
+      const ownerId=sessionData.session.user.id;
+      const local=getRecords();
       const payload=local.map(x=>({
         attendance_date:x.date,
         student_id:String(x.studentId||''),
@@ -323,24 +331,49 @@ async function syncAttendanceCloud(){
         class_name:String(x.className||''),
         created_by:ownerId
       })).filter(x=>x.attendance_date&&x.student_id&&x.student_name&&x.class_name);
-      if(payload.length){
-        const saved=await cloudClient.from('yoklamalar').upsert(payload,{onConflict:'attendance_date,student_id,created_by'});
+
+      // Büyük listeleri küçük paketlerle gönder; her paketin hatasını ayrı kontrol et.
+      for(let i=0;i<payload.length;i+=200){
+        const saved=await cloudClient.from('yoklamalar')
+          .upsert(payload.slice(i,i+200),{onConflict:'attendance_date,student_id,created_by'});
         if(saved.error)throw saved.error;
       }
+
+      // Supabase'in satır sınırına takılmamak için kayıtları sayfalı oku.
+      let cloudRows=[];
+      for(let offset=0;;offset+=500){
+        const page=await cloudClient.from('yoklamalar')
+          .select('attendance_date,student_id,student_name,class_name')
+          .order('attendance_date',{ascending:false})
+          .range(offset,offset+499);
+        if(page.error)throw page.error;
+        cloudRows=cloudRows.concat(page.data||[]);
+        if(!page.data||page.data.length<500)break;
+      }
+
+      // İndirme sürerken yeni yoklama girilmiş olabilir; son yerel durumu tekrar oku.
+      const latestLocal=getRecords();
+      const merged=new Map();
+      cloudRows.forEach(x=>{
+        const key=String(x.attendance_date)+'|'+String(x.student_id);
+        merged.set(key,{date:x.attendance_date,studentId:String(x.student_id),name:x.student_name,className:x.class_name});
+      });
+      latestLocal.forEach(x=>{
+        const key=String(x.date)+'|'+String(x.studentId);
+        merged.set(key,{date:x.date,studentId:String(x.studentId),name:x.name,className:x.className});
+      });
+      putRecords([...merged.values()]);
+      renderRecords();dailyReport();
+      // Eşitleme sürerken başka kayıt geldiyse döngü yeniden çalışır.
     }
-    const result=await cloudClient.from('yoklamalar').select('attendance_date,student_id,student_name,class_name').order('attendance_date',{ascending:false});
-    if(result.error)throw result.error;
-    const merged=new Map();
-    [...result.data||[],...local.map(x=>({attendance_date:x.date,student_id:x.studentId,student_name:x.name,class_name:x.className}))].forEach(x=>{
-      const key=[x.attendance_date,x.student_id,x.student_name,x.class_name].join('|');
-      merged.set(key,{date:x.attendance_date,studentId:String(x.student_id),name:x.student_name,className:x.class_name});
-    });
-    putRecords([...merged.values()]);
-    renderRecords();dailyReport();
-    cloudStatus.textContent='Yoklama kayıtları da bulutla eşitlendi.';
+    if(!cloudSyncPending)cloudStatus.textContent='Yoklama kayıtları bulutla eşitlendi.';
   }catch(error){
-    cloudStatus.textContent='Öğrenci listesi bağlı; yoklama eşitleme hatası: '+(error.message||'Bilinmeyen hata');
-  }finally{cloudSyncBusy=false;}
+    cloudSyncPending=false;
+    cloudStatus.textContent='Yoklama eşitleme başarısız: '+(error.message||'Bilinmeyen hata')+'. Kayıtlar bu telefonda korunuyor; bağlantı gelince yeniden deneyin.';
+  }finally{
+    cloudSyncBusy=false;
+    if(cloudSyncPending)syncAttendanceCloud();
+  }
 }
 const cloudStatus=document.getElementById('cloudStatus');
 document.getElementById('cloudLogin').addEventListener('click',async()=>{
@@ -372,9 +405,17 @@ document.getElementById('cloudLogin').addEventListener('click',async()=>{
     cloudStatus.textContent='Bağlantı hatası: '+(error.message||'Bilinmeyen hata')+' · Mevcut cihaz kayıtları korunuyor.';
   }finally{button.disabled=false;}
 });
-cloudClient.auth.getSession().then(({data})=>{
-  if(data.session){document.getElementById('cloudEmail').value=data.session.user.email||'';cloudStatus.textContent='Oturum açık. Öğrencileri eşitlemek için düğmeye basın.';}
+cloudClient.auth.getSession().then(({data,error})=>{
+  if(error){cloudStatus.textContent='Oturum kontrol edilemedi: '+error.message;return;}
+  if(data.session){
+    document.getElementById('cloudEmail').value=data.session.user.email||'';
+    cloudStatus.textContent='Oturum açık. Yoklama eşitlemesi başlatılıyor…';
+    syncAttendanceCloud();
+  }
 });
+window.addEventListener('online',()=>syncAttendanceCloud());
+window.addEventListener('pageshow',()=>{if(document.visibilityState==='visible')syncAttendanceCloud();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncAttendanceCloud();});
 
 
 
