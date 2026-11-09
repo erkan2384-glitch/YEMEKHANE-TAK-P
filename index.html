@@ -107,7 +107,7 @@ async function toggleStudentMonthlyReport(card,student){
   picker.addEventListener('change',render);
   render();
 }
-function deleteStudent(student){
+async function deleteStudent(student){
   if(!confirm(student.name+' ('+student.className+') kaydını öğrenci listesinden silmek istiyor musunuz?\n\nYoklama geçmişi korunacaktır. Bu işlem diğer telefonların listesinden de kaldırır.'))return;
   const buttons=[...document.querySelectorAll('.delete-student-btn')];
   buttons.forEach(b=>b.disabled=true);
