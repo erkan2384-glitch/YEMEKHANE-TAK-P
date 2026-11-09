@@ -251,7 +251,41 @@ refreshWhatsAppRecipients();
 dailyReport();
 document.getElementById('search').oninput=renderStudents;
 document.getElementById('clearSearch').onclick=()=>{const input=document.getElementById('search');input.value='';renderStudents();input.focus()};
-document.getElementById('addStudent').onclick=()=>{let studentId=nextStudentId(),name=document.getElementById('newName').value.trim(),className=document.getElementById('newClass').value.trim();let parentPhone=document.getElementById('parentPhone').value.trim();if(!name||!className){document.getElementById('notice').textContent='Lütfen adı soyadı ve sınıfını doldurun.';return}let a=getStudents();if(a.some(s=>s.studentId===studentId)){document.getElementById('notice').textContent='Numara çakışması oldu. Sayfayı yenileyip tekrar deneyin.';return}a.push({studentId,name,className,parentPhone});putStudents(a);document.getElementById('newName').value='';document.getElementById('newClass').value='';document.getElementById('parentPhone').value='';document.getElementById('search').value='';document.getElementById('notice').textContent=name+' öğrenci listesine '+studentId+' numarasıyla eklendi.';renderStudents();updateNextId();if(typeof refreshWhatsAppSelectors==='function')refreshWhatsAppSelectors()};
+document.getElementById('addStudent').onclick=async()=>{
+  const name=document.getElementById('newName').value.trim();
+  const className=document.getElementById('newClass').value.trim();
+  const parentPhone=document.getElementById('parentPhone').value.trim();
+  const button=document.getElementById('addStudent');
+  if(!name||!className){document.getElementById('notice').textContent='Lütfen adı soyadı ve sınıfını doldurun.';return;}
+  button.disabled=true;
+  try{
+    const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!sessionData.session)throw new Error('Öğrenci eklemek için önce ortak bulut hesabına giriş yapın.');
+    // En güncel numarayı buluttaki listeye göre hesapla.
+    const latest=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,veli_telefon').order('id');
+    if(latest.error)throw latest.error;
+    const cloudStudents=(latest.data||[]).map(row=>({studentId:String(row.id),name:row.ogrenci_adi||'',className:row.sinif||'',parentPhone:row.veli_telefon||''})).filter(x=>x.name&&x.className);
+    const studentId=String((cloudStudents.reduce((max,s)=>Math.max(max,parseInt(String(s.studentId).replace(/\\D/g,''),10)||0),0)+1)).padStart(4,'0');
+    const duplicate=cloudStudents.some(s=>String(s.name).trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&String(s.className).trim().toLocaleLowerCase('tr-TR')===className.toLocaleLowerCase('tr-TR'));
+    if(duplicate)throw new Error('Bu öğrenci aynı sınıfta bulut listesinde zaten var. Önce öğrenci listesini kontrol edin.');
+    const inserted=await cloudClient.from('öğrenciler').insert({
+      id:studentId,ogrenci_adi:name,sinif:className,veli_telefon:parentPhone
+    }).select('id,ogrenci_adi,sinif,veli_telefon').single();
+    if(inserted.error)throw inserted.error;
+    const row=inserted.data;
+    const refreshed=[...cloudStudents,{studentId:String(row.id),name:row.ogrenci_adi||name,className:row.sinif||className,parentPhone:row.veli_telefon||parentPhone}];
+    putStudents(refreshed);
+    document.getElementById('newName').value='';
+    document.getElementById('newClass').value='';
+    document.getElementById('parentPhone').value='';
+    document.getElementById('search').value='';
+    document.getElementById('notice').textContent=name+' buluta eklendi. Diğer telefonlar listeyi otomatik yenileyecek.';
+    renderStudents();updateNextId();if(typeof refreshWhatsAppSelectors==='function')refreshWhatsAppSelectors();
+  }catch(error){
+    document.getElementById('notice').textContent='Öğrenci buluta eklenemedi: '+(error.message||'Bilinmeyen hata')+'. Mevcut öğrenci listesi korunuyor.';
+  }finally{button.disabled=false;}
+};
 function downloadCsv(filename,rows){let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');let u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));let el=document.createElement('a');el.href=u;el.download=filename;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
 document.getElementById('exportStudents').onclick=()=>{let a=[['TIP','Öğrenci No','Ad Soyad','Sınıf','Veli Telefonu'],...getStudents().map(x=>['OGRENCI',x.studentId,x.name,x.className,x.parentPhone||''])];downloadCsv('yemekhane_ogrenciler.csv',a)};
 document.getElementById('exportRecords').onclick=()=>{let a=[['TIP','Tarih','Öğrenci No','Ad Soyad','Sınıf'],...getRecords().map(x=>['YOKLAMA',x.date,x.studentId,x.name,x.className])];downloadCsv('yemekhane_yoklamalar.csv',a)};
@@ -376,6 +410,29 @@ async function syncAttendanceCloud(){
   }
 }
 const cloudStatus=document.getElementById('cloudStatus');
+let studentSyncBusy=false;
+async function syncStudentsCloud(){
+  if(studentSyncBusy)return getStudents();
+  studentSyncBusy=true;
+  try{
+    const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!sessionData.session)return getStudents();
+    const result=await cloudClient.from('öğrenciler')
+      .select('id,ogrenci_adi,sinif,veli_telefon').order('id');
+    if(result.error)throw result.error;
+    const cloudStudents=(result.data||[]).map(row=>({
+      studentId:String(row.id),name:row.ogrenci_adi||'',
+      className:row.sinif||'',parentPhone:row.veli_telefon||''
+    })).filter(x=>x.name&&x.className);
+    if(cloudStudents.length){
+      putStudents(cloudStudents);
+      renderStudents();updateNextId();
+      if(typeof refreshWhatsAppRecipients==='function')refreshWhatsAppRecipients(true);
+    }
+    return cloudStudents;
+  }finally{studentSyncBusy=false;}
+}
 document.getElementById('cloudLogin').addEventListener('click',async()=>{
   const email=document.getElementById('cloudEmail').value.trim();
   const password=document.getElementById('cloudPassword').value;
@@ -386,17 +443,8 @@ document.getElementById('cloudLogin').addEventListener('click',async()=>{
     const login=await cloudClient.auth.signInWithPassword({email,password});
     if(login.error)throw login.error;
     cloudStatus.textContent='Giriş başarılı. Öğrenciler yükleniyor…';
-    const result=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,veli_telefon').order('id');
-    if(result.error)throw result.error;
-    const cloudStudents=(result.data||[]).map(row=>({
-      studentId:String(row.id),
-      name:row.ogrenci_adi||'',
-      className:row.sinif||'',
-      parentPhone:row.veli_telefon||''
-    })).filter(x=>x.name&&x.className);
+    const cloudStudents=await syncStudentsCloud();
     if(!cloudStudents.length)throw new Error('Bulut tablosunda öğrenci bulunamadı.');
-    putStudents(cloudStudents);
-    renderStudents();updateNextId();refreshWhatsAppRecipients(true);
     document.getElementById('cloudPassword').value='';
     cloudStatus.textContent=cloudStudents.length+' öğrenci buluttan yüklendi.';
     await syncAttendanceCloud();
@@ -409,13 +457,17 @@ cloudClient.auth.getSession().then(({data,error})=>{
   if(error){cloudStatus.textContent='Oturum kontrol edilemedi: '+error.message;return;}
   if(data.session){
     document.getElementById('cloudEmail').value=data.session.user.email||'';
-    cloudStatus.textContent='Oturum açık. Yoklama eşitlemesi başlatılıyor…';
-    syncAttendanceCloud();
+    cloudStatus.textContent='Oturum açık. Öğrenci ve yoklama listeleri eşitleniyor…';
+    syncStudentsCloud().then(()=>syncAttendanceCloud()).catch(error=>{
+      cloudStatus.textContent='Öğrenci listesi eşitlenemedi: '+(error.message||'Bilinmeyen hata');
+    });
   }
 });
-window.addEventListener('online',()=>syncAttendanceCloud());
-window.addEventListener('pageshow',()=>{if(document.visibilityState==='visible')syncAttendanceCloud();});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncAttendanceCloud();});
+window.addEventListener('online',()=>syncStudentsCloud().then(()=>syncAttendanceCloud()).catch(error=>{
+  cloudStatus.textContent='Bulut eşitleme hatası: '+(error.message||'Bilinmeyen hata');
+}));
+window.addEventListener('pageshow',()=>{if(document.visibilityState==='visible')syncStudentsCloud().then(()=>syncAttendanceCloud()).catch(()=>{});});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncStudentsCloud().then(()=>syncAttendanceCloud()).catch(()=>{});});
 
 
 
