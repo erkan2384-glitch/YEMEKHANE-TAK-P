@@ -122,13 +122,17 @@ let a=getRecords().map((x,i)=>({...x,_i:i})).sort((x,y)=>{
    const byDate=y.date.localeCompare(x.date);
    return byDate||y._i-x._i;
  });
-document.getElementById('records').innerHTML=a.length?'<ul>'+a.map(x=>'<li>'+x.date+' — '+escapeHtml(x.name)+' ('+escapeHtml(x.className)+') <button onclick="deleteRecord('+x._i+')">Sil</button></li>').join('')+'</ul>':'<p class="small">Henüz kayıt yok.</p>';
+document.getElementById('records').innerHTML=a.length?'<ul>'+a.map(x=>'<li id="attendance-record-'+encodeURIComponent(String(x.studentId))+'-'+x.date+'" style="padding:9px 6px;border-bottom:1px solid #eee">'+x.date+' — '+escapeHtml(x.name)+' ('+escapeHtml(x.className)+') <button onclick="deleteRecord('+x._i+')">Sil</button></li>').join('')+'</ul>':'<p class="small">Henüz kayıt yok.</p>';
 }function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function markStudent(s){
   let a=getRecords();
   const duplicate=a.some(x=>x.date===today()&&String(x.studentId)===String(s.studentId));
   if(duplicate){
-    document.getElementById('notice').textContent=s.name+' bugün zaten yoklamaya kaydedilmiş.';
+    const existing=a.find(x=>x.date===today()&&String(x.studentId)===String(s.studentId));
+    document.getElementById('notice').textContent=s.name+' bugün zaten kaydedilmiş: '+(existing?.date||today())+' · Kayıt listede gösteriliyor.';
+    renderRecords();
+    const row=document.getElementById('attendance-record-'+encodeURIComponent(String(s.studentId))+'-'+today());
+    if(row){row.style.background='#fff2cc';row.style.border='2px solid #d69e00';row.scrollIntoView({behavior:'smooth',block:'center'});}
     return false;
   }
   a.push({date:today(),studentId:s.studentId,name:s.name,className:s.className,createdAt:new Date().toISOString()});
