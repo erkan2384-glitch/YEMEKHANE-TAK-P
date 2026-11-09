@@ -76,7 +76,27 @@ function excelVeliTelefonlariniUygula(){
 
 function nextStudentId(){let ids=getStudents().map(s=>parseInt(String(s.studentId).replace(/\D/g,''),10)).filter(Number.isFinite);let n=(ids.length?Math.max(...ids):0)+1;return String(n).padStart(4,'0')}
 function updateNextId(){document.getElementById('nextId').textContent=nextStudentId()}
-function renderStudents(){let q=document.getElementById('search').value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById('results');box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div><button class="primary" data-id="${encodeURIComponent(s.studentId)}">Bugün geldi olarak kaydet</button></div>`).join(''):'<p class="small">Öğrenci bulunamadı. Yeni Öğrenci Ekle bölümünden ekleyebilirsiniz.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;el.querySelector('button').onclick=()=>markStudent(students[i])})}
+function renderStudents(){let q=document.getElementById('search').value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById('results');box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div><button class="primary attendance-btn" data-id="${encodeURIComponent(s.studentId)}">Bugün geldi olarak kaydet</button><button class="secondary delete-student-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button></div>`).join(''):'<p class="small">Öğrenci bulunamadı. Yeni Öğrenci Ekle bölümünden ekleyebilirsiniz.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;el.querySelector('.attendance-btn').onclick=()=>markStudent(students[i]);el.querySelector('.delete-student-btn').onclick=()=>deleteStudent(students[i])})}
+async function deleteStudent(student){
+  if(!confirm(student.name+' ('+student.className+') kaydını öğrenci listesinden silmek istiyor musunuz?\n\nYoklama geçmişi korunacaktır. Bu işlem diğer telefonların listesinden de kaldırır.'))return;
+  const buttons=[...document.querySelectorAll('.delete-student-btn')];
+  buttons.forEach(b=>b.disabled=true);
+  try{
+    const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!sessionData.session)throw new Error('Silmek için önce ortak bulut hesabına giriş yapın.');
+    const result=await cloudClient.from('öğrenciler').delete().eq('id',student.studentId).select('id');
+    if(result.error)throw result.error;
+    if(!result.data||result.data.length===0)throw new Error('Bulutta kayıt silinmedi. Yetki veya öğrenci numarası kontrol edilmeli; telefondaki kayıt korunuyor.');
+    const remaining=getStudents().filter(x=>String(x.studentId)!==String(student.studentId));
+    putStudents(remaining);
+    renderStudents();updateNextId();
+    if(typeof refreshWhatsAppRecipients==='function')refreshWhatsAppRecipients(true);
+    document.getElementById('notice').textContent='Öğrenci buluttan silindi. Yoklama geçmişi korundu; diğer telefonlar listeyi yenilediğinde öğrenci görünmeyecek.';
+  }catch(error){
+    document.getElementById('notice').textContent='Öğrenci silinemedi: '+(error.message||'Bilinmeyen hata')+'. Kayıt bu telefonda korundu.';
+  }finally{buttons.forEach(b=>b.disabled=false);}
+}
 function deleteRecord(index){
   if(!confirm('Bu yoklama kaydını silmek istiyor musunuz?')) return;
   const records=getRecords();
