@@ -116,7 +116,12 @@ function deleteRecord(index){
   })();
 }
 function renderRecords(){
-let a=getRecords().map((x,i)=>({...x,_i:i})).sort((x,y)=>y.date.localeCompare(x.date));
+let a=getRecords().map((x,i)=>({...x,_i:i})).sort((x,y)=>{
+   const xt=x.createdAt?Date.parse(x.createdAt):0,yt=y.createdAt?Date.parse(y.createdAt):0;
+   if(xt&&yt&&xt!==yt)return yt-xt;
+   const byDate=y.date.localeCompare(x.date);
+   return byDate||y._i-x._i;
+ });
 document.getElementById('records').innerHTML=a.length?'<ul>'+a.map(x=>'<li>'+x.date+' — '+escapeHtml(x.name)+' ('+escapeHtml(x.className)+') <button onclick="deleteRecord('+x._i+')">Sil</button></li>').join('')+'</ul>':'<p class="small">Henüz kayıt yok.</p>';
 }function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function markStudent(s){
@@ -126,7 +131,7 @@ function markStudent(s){
     document.getElementById('notice').textContent=s.name+' bugün zaten yoklamaya kaydedilmiş.';
     return false;
   }
-  a.push({date:today(),studentId:s.studentId,name:s.name,className:s.className});
+  a.push({date:today(),studentId:s.studentId,name:s.name,className:s.className,createdAt:new Date().toISOString()});
   putRecords(a);
   syncAttendanceCloud();
   document.getElementById('notice').textContent=s.name+' için kayıt bu telefona kaydedildi.';
@@ -383,7 +388,8 @@ async function syncAttendanceCloud(){
         student_id:String(x.studentId||''),
         student_name:String(x.name||''),
         class_name:String(x.className||''),
-        created_by:ownerId
+        created_by:ownerId,
+         ...(x.createdAt?{created_at:x.createdAt}:{})
       })).filter(x=>x.attendance_date&&x.student_id&&x.student_name&&x.class_name);
 
       // Büyük listeleri küçük paketlerle gönder; her paketin hatasını ayrı kontrol et.
@@ -397,8 +403,8 @@ async function syncAttendanceCloud(){
       let cloudRows=[];
       for(let offset=0;;offset+=500){
         const page=await cloudClient.from('yoklamalar')
-          .select('attendance_date,student_id,student_name,class_name')
-          .order('attendance_date',{ascending:false})
+          .select('attendance_date,student_id,student_name,class_name,created_at')
+          .order('created_at',{ascending:false})
           .range(offset,offset+499);
         if(page.error)throw page.error;
         cloudRows=cloudRows.concat(page.data||[]);
@@ -410,11 +416,11 @@ async function syncAttendanceCloud(){
       const merged=new Map();
       cloudRows.forEach(x=>{
         const key=String(x.attendance_date)+'|'+String(x.student_id);
-        merged.set(key,{date:x.attendance_date,studentId:String(x.student_id),name:x.student_name,className:x.class_name});
+        merged.set(key,{date:x.attendance_date,studentId:String(x.student_id),name:x.student_name,className:x.class_name,createdAt:x.created_at||null});
       });
       latestLocal.forEach(x=>{
         const key=String(x.date)+'|'+String(x.studentId);
-        merged.set(key,{date:x.date,studentId:String(x.studentId),name:x.name,className:x.className});
+        merged.set(key,{date:x.date,studentId:String(x.studentId),name:x.name,className:x.className,createdAt:x.createdAt||merged.get(key)?.createdAt||null});
       });
       putRecords([...merged.values()]);
       renderRecords();dailyReport();
