@@ -38,7 +38,7 @@ function renderNewClassRoster(){
 document.getElementById('newClass').addEventListener('input',renderNewClassRoster);
 function nextStudentId(){let ids=getStudents().map(s=>parseInt(String(s.studentId).replace(/\D/g,''),10)).filter(Number.isFinite);let n=(ids.length?Math.max(...ids):0)+1;return String(n).padStart(4,'0')}
 function updateNextId(){document.getElementById('nextId').textContent=nextStudentId()}
-function renderStudents(){let q=document.getElementById('search').value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById('results');box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div><button class="primary attendance-btn" data-id="${encodeURIComponent(s.studentId)}">Bugün geldi olarak kaydet</button><button class="secondary monthly-report-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary delete-student-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button></div>`).join(''):'<p class="small">Öğrenci bulunamadı. Yeni Öğrenci Ekle bölümünden ekleyebilirsiniz.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;el.querySelector('.attendance-btn').onclick=()=>markStudent(students[i]);el.querySelector('.monthly-report-btn').onclick=()=>toggleStudentMonthlyReport(el,students[i]);el.querySelector('.delete-student-btn').onclick=()=>deleteStudent(students[i])})}
+function renderStudents(){let q=document.getElementById('search').value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById('results');box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div><button class="primary attendance-btn" data-id="${encodeURIComponent(s.studentId)}">Bugün geldi olarak kaydet</button><button class="secondary monthly-report-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary edit-student-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary delete-student-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button></div>`).join(''):'<p class="small">Öğrenci bulunamadı. Yeni Öğrenci Ekle bölümünden ekleyebilirsiniz.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;el.querySelector('.attendance-btn').onclick=()=>markStudent(students[i]);el.querySelector('.monthly-report-btn').onclick=()=>toggleStudentMonthlyReport(el,students[i]);el.querySelector('.edit-student-btn').onclick=()=>editStudent(students[i]);el.querySelector('.delete-student-btn').onclick=()=>deleteStudent(students[i])})}
 async function toggleStudentMonthlyReport(card,student){
   const panel=card.querySelector('.student-monthly-report');
   if(!panel)return;
@@ -68,6 +68,38 @@ async function toggleStudentMonthlyReport(card,student){
   };
   picker.addEventListener('change',render);
   render();
+}
+async function editStudent(student){
+  const name=prompt('Öğrencinin adı soyadı:',student.name);
+  if(name===null)return;
+  const className=prompt('Sınıfı:',student.className);
+  if(className===null)return;
+  const parentPhone=prompt('Veli telefon numarası:',student.parentPhone||'');
+  if(parentPhone===null)return;
+  const cleanName=name.trim(),cleanClass=className.trim(),cleanPhone=parentPhone.trim();
+  if(!cleanName||!cleanClass){document.getElementById('notice').textContent='Ad soyad ve sınıf boş bırakılamaz.';return;}
+  const buttons=[...document.querySelectorAll('.edit-student-btn')];
+  buttons.forEach(b=>b.disabled=true);
+  try{
+    const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!sessionData.session)throw new Error('Düzenlemek için önce ortak bulut hesabına giriş yapın.');
+    const result=await cloudClient.from('öğrenciler').update({
+      ogrenci_adi:cleanName,sinif:cleanClass,veli_telefon:cleanPhone
+    }).eq('id',student.studentId).select('id,ogrenci_adi,sinif,veli_telefon');
+    if(result.error)throw result.error;
+    if(!result.data||result.data.length===0)throw new Error('Bulutta değişiklik yapılmadı. Yetki veya öğrenci numarası kontrol edilmeli.');
+    const row=result.data[0];
+    const updated=getStudents().map(x=>String(x.studentId)===String(student.studentId)?{
+      ...x, name:row.ogrenci_adi||cleanName,className:row.sinif||cleanClass,parentPhone:row.veli_telefon||cleanPhone
+    }:x);
+    putStudents(updated);
+    renderStudents();
+    renderNewClassRoster();
+    document.getElementById('notice').textContent='Öğrenci bilgileri buluta kaydedildi. Öğrenci numarası ve yoklama geçmişi korundu.';
+  }catch(error){
+    document.getElementById('notice').textContent='Öğrenci bilgileri güncellenemedi: '+(error.message||'Bilinmeyen hata');
+  }finally{buttons.forEach(b=>b.disabled=false);}
 }
 async function deleteStudent(student){
   if(!confirm(student.name+' ('+student.className+') kaydını öğrenci listesinden silmek istiyor musunuz?\n\nYoklama geçmişi korunacaktır. Bu işlem diğer telefonların listesinden de kaldırır.'))return;
