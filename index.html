@@ -27,7 +27,7 @@ function renderNewClassRoster(){
   const input=document.getElementById('newClass');
   const panel=document.getElementById('classRosterPreview');
   if(!input||!panel)return;
-  const normalize=value=>String(value||'').trim().toLocaleUpperCase('tr-TR').split(' ').join('');
+  const normalize=value=>String(value||'').trim().toLocaleUpperCase('tr-TR').replace(/[\\s\\-_/\\.]/g,'');
   const query=normalize(input.value);
   if(!query){panel.style.display='none';panel.textContent='';return;}
   const matches=getStudents().filter(student=>normalize(student.className)===query).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'tr'));
