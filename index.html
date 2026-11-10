@@ -57,7 +57,7 @@ function renderNewClassRoster(){
 document.getElementById('newClass').addEventListener('input',renderNewClassRoster);
 function nextStudentId(){let ids=getStudents().map(s=>parseInt(String(s.studentId).replace(/\D/g,''),10)).filter(Number.isFinite);let n=(ids.length?Math.max(...ids):0)+1;return String(n).padStart(4,'0')}
 function updateNextId(){document.getElementById('nextId').textContent=nextStudentId()}
-function renderStudents(){let q=document.getElementById('search').value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById('results');box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div><button class="primary attendance-btn" data-id="${encodeURIComponent(s.studentId)}">Bugün geldi olarak kaydet</button><button class="secondary monthly-report-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary edit-student-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary delete-student-btn" data-id="${encodeURIComponent(s.studentId)}" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button></div>`).join(''):'<p class="small">Öğrenci bulunamadı. Yeni Öğrenci Ekle bölümünden ekleyebilirsiniz.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;el.querySelector('.attendance-btn').onclick=()=>markStudent(students[i]);el.querySelector('.monthly-report-btn').onclick=()=>toggleStudentMonthlyReport(el,students[i]);el.querySelector('.edit-student-btn').onclick=()=>editStudent(students[i]);el.querySelector('.delete-student-btn').onclick=()=>deleteStudent(students[i])})}
+function renderStudents(targetId='results',management=false){const input=document.getElementById(targetId==='results'?'search':'studentManageSearch');if(!input)return;let q=input.value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById(targetId);box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div>${management?'':'<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">Bugün geldi olarak kaydet</button>'}${management?'<button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary delete-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button>':''}</div>`).join(''):'<p class="small">Öğrenci bulunamadı.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;const attendance=el.querySelector('.attendance-btn');if(attendance)attendance.onclick=()=>markStudent(students[i]);const monthly=el.querySelector('.monthly-report-btn');if(monthly)monthly.onclick=()=>toggleStudentMonthlyReport(el,students[i]);const edit=el.querySelector('.edit-student-btn');if(edit)edit.onclick=()=>editStudent(students[i]);const del=el.querySelector('.delete-student-btn');if(del)del.onclick=()=>deleteStudent(students[i])})}
 async function toggleStudentMonthlyReport(card,student){
   const panel=card.querySelector('.student-monthly-report');
   if(!panel)return;
@@ -113,7 +113,7 @@ async function editStudent(student){
       ...x, name:row.ogrenci_adi||cleanName,className:row.sinif||cleanClass,parentPhone:row.veli_telefon||cleanPhone
     }:x);
     putStudents(updated);
-    renderStudents();
+    renderStudents();renderStudents('studentManageResults',true);
     renderNewClassRoster();
     document.getElementById('notice').textContent='Öğrenci bilgileri buluta kaydedildi. Öğrenci numarası ve yoklama geçmişi korundu.';
   }catch(error){
@@ -133,7 +133,7 @@ async function deleteStudent(student){
     if(!result.data||result.data.length===0)throw new Error('Bulutta kayıt silinmedi. Yetki veya öğrenci numarası kontrol edilmeli; telefondaki kayıt korunuyor.');
     const remaining=getStudents().filter(x=>String(x.studentId)!==String(student.studentId));
     putStudents(remaining);
-    renderStudents();updateNextId();
+    renderStudents();renderStudents('studentManageResults',true);updateNextId();
     document.getElementById('notice').textContent='Öğrenci buluttan silindi. Yoklama geçmişi korundu; diğer telefonlar listeyi yenilediğinde öğrenci görünmeyecek.';
   }catch(error){
     document.getElementById('notice').textContent='Öğrenci silinemedi: '+(error.message||'Bilinmeyen hata')+'. Kayıt bu telefonda korundu.';
@@ -189,12 +189,14 @@ function markStudent(s){
 function setupMobileNavigation(){
   const searchSection=document.getElementById('search').closest('section');
   const addSection=document.querySelector('.addcard');
+  const manageSection=document.createElement('section');manageSection.className='card';manageSection.innerHTML='<label for="studentManageSearch">Öğrenci ara ve bilgilerini yönet</label><input id="studentManageSearch" placeholder="Ad, sınıf veya öğrenci numarası" autocomplete="off"><div id="studentManageResults"></div>';
   const recordsSection=document.getElementById('records').closest('section');
   const cloudSection=document.getElementById('cloudCard');
   const makePanel=(id)=>{const p=document.createElement('div');p.id=id;p.className='tab-panel';document.body.insertBefore(p,document.getElementById('mobileTabs'));return p;};
   const home=makePanel('homePanel'),students=makePanel('studentsPanel'),history=makePanel('historyPanel'),settings=makePanel('settingsPanel');
   home.appendChild(searchSection);
   students.appendChild(addSection);
+  students.appendChild(manageSection);
   history.appendChild(recordsSection);
   settings.appendChild(cloudSection);
   const nav=document.createElement('nav');nav.id='mobileTabs';nav.setAttribute('aria-label','Ana menü');
@@ -212,7 +214,8 @@ function setupMobileNavigation(){
 }
 
 dailyReport();
-document.getElementById('search').oninput=renderStudents;
+document.getElementById('search').oninput=()=>renderStudents('results',false);
+document.getElementById('studentManageSearch').oninput=()=>renderStudents('studentManageResults',true);
 document.getElementById('clearSearch').onclick=()=>{const input=document.getElementById('search');input.value='';renderStudents();input.focus()};
 document.getElementById('addStudent').onclick=async()=>{
   const name=document.getElementById('newName').value.trim();
@@ -264,7 +267,7 @@ document.getElementById('importBtn').onclick=()=>document.getElementById('file')
 function parseCsv(text){let rows=[],row=[],field='',quoted=false;for(let i=0;i<text.length;i++){let c=text[i],n=text[i+1];if(quoted){if(c==='"'&&n==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else{if(c==='"')quoted=true;else if(c==='; '||c===';'){row.push(field);field=''}else if(c===','){row.push(field);field=''}else if(c==='\n'){row.push(field);rows.push(row);row=[];field=''}else if(c!=='\r')field+=c}}row.push(field);if(row.some(x=>x!==''))rows.push(row);return rows}
 document.getElementById('file').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let text=(await f.text()).replace(/^\ufeff/,'');let rows=parseCsv(text);if(!rows.length)throw Error('Dosya boş.');let head=rows[0].map(x=>x.trim().toLocaleLowerCase('tr-TR'));let students=getStudents(),records=getRecords(),addedS=0,addedR=0,updatedPhones=0;let isStudent=head.some(x=>x.includes('ad soyad'))&&head.some(x=>x.includes('sınıf'))&&!head.some(x=>x.includes('tarih'));let isRecord=head.some(x=>x.includes('tarih'))&&head.some(x=>x.includes('ad soyad'));
 for(let r of rows.slice(1)){if(isStudent){let id=r[1]||'',name=(r[2]||'').trim(),cls=(r[3]||'').trim();if(!name||!cls)continue;let existing=students.find(x=>String(x.name||'').trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&String(x.className||'').trim().toLocaleLowerCase('tr-TR')===cls.toLocaleLowerCase('tr-TR'));let phone=(r[4]||'').trim();if(existing){if(phone&&existing.parentPhone!==phone){existing.parentPhone=phone;updatedPhones++}}else{students.push({studentId:id||String(students.length+1).padStart(4,'0'),name,className:cls,parentPhone:phone});addedS++}}else if(isRecord){let date=r[1]||r[0]||'',id=r[2]||r[1]||'',name=(r[3]||r[2]||'').trim(),cls=(r[4]||r[3]||'').trim();if(!date||!name||!cls)continue;let key=[date,name.toLocaleLowerCase('tr-TR'),cls.toLocaleLowerCase('tr-TR')].join('|');if(!records.some(x=>[x.date,x.name.toLocaleLowerCase('tr-TR'),x.className.toLocaleLowerCase('tr-TR')].join('|')===key)){records.push({date,studentId:id,name,className:cls});addedR++}}}
-if(isStudent){putStudents(students);document.getElementById('notice').textContent=addedS+' yeni öğrenci eklendi; '+updatedPhones+' mevcut öğrencinin veli telefonu güncellendi.';renderStudents();updateNextId();}else if(isRecord){putRecords(records);document.getElementById('notice').textContent=addedR+' yeni yoklama kaydı aktarıldı. Tekrar kayıtlar atlandı.';renderRecords();dailyReport()}else throw Error('Dosya biçimi tanınmadı. Öğrenci veya yoklama CSV dosyasını seçin.');
+if(isStudent){putStudents(students);document.getElementById('notice').textContent=addedS+' yeni öğrenci eklendi; '+updatedPhones+' mevcut öğrencinin veli telefonu güncellendi.';renderStudents();renderStudents('studentManageResults',true);updateNextId();}else if(isRecord){putRecords(records);document.getElementById('notice').textContent=addedR+' yeni yoklama kaydı aktarıldı. Tekrar kayıtlar atlandı.';renderRecords();dailyReport()}else throw Error('Dosya biçimi tanınmadı. Öğrenci veya yoklama CSV dosyasını seçin.');
 }catch(err){document.getElementById('notice').textContent='Aktarım yapılamadı: '+err.message}e.target.value=''};
 function dailyReport(selectedDate){
   const reportDate=selectedDate||today();
@@ -435,6 +438,6 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 
 dailyReport();
-  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(()=>{}))}renderStudents();renderRecords();updateNextId();setupMobileNavigation();
+  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(()=>{}))}renderStudents();renderRecords();updateNextId();setupMobileNavigation();renderStudents('studentManageResults',true);
 </script>
 </body></html>
