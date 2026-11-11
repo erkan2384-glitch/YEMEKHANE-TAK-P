@@ -277,7 +277,8 @@ function dailyReport(selectedDate){
   const groups={};
   unique.forEach(x=>{
     const label=String(x.className||'').trim()||'Sınıf belirtilmemiş';
-    groups[label]=(groups[label]||0)+1;
+    if(!groups[label])groups[label]=[];
+    groups[label].push(x);
   });
   const dateObj=new Date(reportDate+'T12:00:00');
   const monday=new Date(dateObj);
@@ -286,19 +287,34 @@ function dailyReport(selectedDate){
   const weekStart=monday.getFullYear()+'-'+String(monday.getMonth()+1).padStart(2,'0')+'-'+String(monday.getDate()).padStart(2,'0');
   const weekRows=all.filter(x=>x.date>=weekStart&&x.date<=reportDate);
   const weekUnique=new Set(weekRows.map(x=>[x.date,x.studentId||x.name,x.className].join('|')));
+  const classes=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
   let report='<section class="card"><div class="sectiontitle">Yemek Raporu</div>'+
     '<label for="reportDate">Rapor tarihi</label><input id="reportDate" type="date" value="'+reportDate+'">'+
     '<h2>Toplam gelen: '+unique.length+'</h2>'+
+    '<p class="small">Yoklama alınan sınıf sayısı: <b>'+classes.length+'</b></p>'+
     '<p class="small">Haftanın başlangıcından seçilen güne kadar: '+weekUnique.size+' yoklama kaydı</p>';
-  Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr')).forEach(k=>{
-    report+='<p>'+escapeHtml(k)+': <b>'+groups[k]+'</b> öğrenci</p>';
-  });
+  if(classes.length){
+    report+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;margin-top:10px"><thead><tr>'+
+      '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #dce3e8">Sınıf</th>'+
+      '<th style="text-align:right;padding:10px 8px;border-bottom:2px solid #dce3e8">Sayı</th>'+
+      '<th style="text-align:left;padding:10px 8px;border-bottom:2px solid #dce3e8">Yemeğe giren öğrenciler</th>'+
+      '</tr></thead><tbody>';
+    classes.forEach(k=>{
+      const names=groups[k].map(x=>String(x.name||'').trim()).filter(Boolean).sort((a,b)=>a.localeCompare(b,'tr'));
+      report+='<tr><td style="vertical-align:top;padding:10px 8px;border-bottom:1px solid #e8edf0;font-weight:700">'+escapeHtml(k)+'</td>'+
+        '<td style="vertical-align:top;text-align:right;padding:10px 8px;border-bottom:1px solid #e8edf0;font-weight:700">'+groups[k].length+'</td>'+
+        '<td style="padding:10px 8px;border-bottom:1px solid #e8edf0">'+names.map(escapeHtml).join('<br>')+'</td></tr>';
+    });
+    report+='</tbody></table></div>';
+  }
   if(!unique.length)report+='<p class="small">Bu tarihte kayıt bulunamadı.</p>';
   report+='</section>';
   let old=document.getElementById('dailyReport');
   if(old)old.remove();
   let d=document.createElement('div');d.id='dailyReport';d.innerHTML=report;
-  document.body.appendChild(d);
+  const historyPanel=document.getElementById('historyPanel');
+  if(historyPanel)historyPanel.insertBefore(d,historyPanel.firstChild);
+  else document.body.appendChild(d);
   document.getElementById('reportDate').addEventListener('change',e=>dailyReport(e.target.value));
 }
 
