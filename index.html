@@ -21,6 +21,23 @@ header h1{font-size:21px}
 #settingsPanel .card:first-child{margin-top:12px}
 @media(min-width:700px){#mobileTabs{max-width:620px;left:50%;transform:translateX(-50%);border:1px solid #dce3e8;border-bottom:0;border-radius:14px 14px 0 0}}
 
+
+@media print{
+  @page{size:auto;margin:12mm}
+  body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important;max-width:none!important}
+  body>*{display:none!important}
+  #dailyReport{display:block!important;margin:0!important;padding:0!important}
+  #dailyReport .card{display:block!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+  #dailyReport .no-print,#dailyReport label[for="reportDate"],#dailyReport #reportDate{display:none!important}
+  #dailyReport .print-date{display:block!important;text-align:center!important;margin:6px 0 14px!important;color:#000!important}
+  #dailyReport table{width:100%!important;border-collapse:collapse!important;table-layout:auto!important}
+  #dailyReport th,#dailyReport td{color:#000!important;border:1px solid #888!important;padding:6px!important;font-size:10pt!important}
+  #dailyReport th{background:#eee!important}
+  #dailyReport h2{font-size:14pt!important;margin:10px 0!important}
+  #dailyReport .sectiontitle{font-size:18pt!important;text-align:center!important;margin-bottom:4px!important}
+  #dailyReport tr{break-inside:avoid;page-break-inside:avoid}
+}
+@media screen{#dailyReport .print-date{display:none}}
 </style></head><body>
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
 <section class="card" id="cloudCard">
@@ -288,8 +305,11 @@ function dailyReport(selectedDate){
   const weekRows=all.filter(x=>x.date>=weekStart&&x.date<=reportDate);
   const weekUnique=new Set(weekRows.map(x=>[x.date,x.studentId||x.name,x.className].join('|')));
   const classes=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
-  let report='<section class="card"><div class="sectiontitle">Yemek Raporu</div>'+
-    '<label for="reportDate">Rapor tarihi</label><input id="reportDate" type="date" value="'+reportDate+'">'+
+  const printDate=new Date(reportDate+'T12:00:00').toLocaleDateString('tr-TR');
+  let report='<section class="card"><div class="sectiontitle">YEMEKHANE GÜNLÜK YOKLAMA RAPORU</div>'+
+    '<p class="print-date">Tarih: '+escapeHtml(printDate)+'</p>'+
+    '<div class="no-print"><label for="reportDate">Rapor tarihi</label><input id="reportDate" type="date" value="'+reportDate+'">'+
+    '<button type="button" class="primary" id="printDailyReport">Yazdır / PDF olarak kaydet</button></div>'+
     '<h2>Toplam gelen: '+unique.length+'</h2>'+
     '<p class="small">Yoklama alınan sınıf sayısı: <b>'+classes.length+'</b></p>'+
     '<p class="small">Haftanın başlangıcından seçilen güne kadar: '+weekUnique.size+' yoklama kaydı</p>';
@@ -316,6 +336,7 @@ function dailyReport(selectedDate){
   if(historyPanel)historyPanel.insertBefore(d,historyPanel.firstChild);
   else document.body.appendChild(d);
   document.getElementById('reportDate').addEventListener('change',e=>dailyReport(e.target.value));
+  document.getElementById('printDailyReport').addEventListener('click',()=>window.print());
 }
 
 // Supabase bulut bağlantısı: yalnızca oturum açmış ve RLS ile izin verilmiş kullanıcı erişebilir.
