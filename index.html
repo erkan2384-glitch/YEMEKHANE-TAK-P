@@ -40,14 +40,18 @@ header h1{font-size:21px}
 }
 @media screen{#dailyReport .print-date{display:none}}
 
-/* Keep attendance cards focused; all student administration lives in the Students tab. */
-#homePanel #results .monthly-report-btn,#homePanel #results .edit-student-btn,#homePanel #results .status-student-btn,#homePanel #results .delete-student-btn,#homePanel #results .student-monthly-report{display:none!important}
-#homePanel #results .student{padding:14px 15px}
-#homePanel #results .attendance-btn{display:block;width:100%;margin-top:12px}
+/* Student cards keep their quick actions visible, as in the original iPhone workflow. */
+#homePanel #results .student{padding:15px}
+#homePanel #results .attendance-btn,
+#homePanel #results .monthly-report-btn,
+#homePanel #results .edit-student-btn,
+#homePanel #results .status-student-btn,
+#homePanel #results .delete-student-btn{display:block;width:100%;margin-top:9px;min-height:46px}
+#homePanel #results .delete-student-btn,
+#studentsPanel #studentManageResults .delete-student-btn{color:#9b2525}
 #studentsPanel #studentManageResults .student{padding:15px}
 #studentsPanel #studentManageResults .monthly-report-btn,#studentsPanel #studentManageResults .edit-student-btn,#studentsPanel #studentManageResults .status-student-btn,#studentsPanel #studentManageResults .delete-student-btn{display:block;width:100%;margin-top:9px;min-height:44px}
 #studentsPanel #studentManageResults .status-student-btn{color:#176b4b}
-#studentsPanel #studentManageResults .delete-student-btn{color:#9b2525}
 
 /* iPhone-native inspired layout */
 :root{color-scheme:light;--ios-bg:#f2f2f7;--ios-card:#fff;--ios-blue:#173b57;--ios-green:#187653;--ios-separator:#e5e5ea}
@@ -88,34 +92,25 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:
 @media(min-width:700px){body{padding-top:24px}#mobileTabs{max-width:620px}}
 
 
-/* Restored rounded iPhone bottom navigation */
-body{padding-bottom:calc(138px + env(safe-area-inset-bottom))!important}
+/* iPhone screenshot-matched rounded bottom navigation */
+body{padding-bottom:calc(126px + env(safe-area-inset-bottom))!important}
 #mobileTabs{
-  left:8px;right:8px;bottom: max(8px, env(safe-area-inset-bottom));
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;
-  padding:9px 12px 9px;
-  background:rgba(255,255,255,.97);
-  border:1px solid #e2e6e9;border-radius:52px;
+  position:fixed;z-index:50;left:7px;right:7px;bottom:max(7px,env(safe-area-inset-bottom));
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;
+  padding:8px 10px;background:rgba(255,255,255,.98);
+  border:1px solid #e2e6e9;border-radius:48px;
   box-shadow:0 3px 18px #172b3a12;
-  backdrop-filter:saturate(180%) blur(22px);
-  -webkit-backdrop-filter:saturate(180%) blur(22px);
+  backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)
 }
 #mobileTabs button{
-  min-width:0;min-height:86px;padding:8px 2px;
-  border:0;border-radius:28px;background:transparent;
-  color:#737b84;font-size:16px;font-weight:650;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:0;min-height:78px;padding:7px 2px;border:0;border-radius:28px;
+  background:transparent;color:#737b84;font-size:14px;font-weight:650;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px
 }
-#mobileTabs button span{font-size:32px;line-height:36px;font-weight:500}
+#mobileTabs button span{font-size:30px;line-height:34px;font-weight:500}
 #mobileTabs button.active{background:#e8f1eb;color:#176b4b}
-@media(max-width:420px){
-  #mobileTabs{left:6px;right:6px;gap:3px;padding:8px 9px}
-  #mobileTabs button{min-height:80px;font-size:14px}
-  #mobileTabs button span{font-size:29px;line-height:33px}
-}
-@media(min-width:700px){
-  #mobileTabs{width:calc(100% - 16px);max-width:620px;left:50%;right:auto;transform:translateX(-50%);border-radius:52px}
-}
+@media(max-width:420px){#mobileTabs{left:6px;right:6px;gap:3px;padding:7px 8px}#mobileTabs button{min-height:76px;font-size:14px}#mobileTabs button span{font-size:29px;line-height:33px}}
+@media(min-width:700px){#mobileTabs{width:calc(100% - 16px);max-width:620px;left:50%;right:auto;transform:translateX(-50%);border-radius:48px}}
 
 </style></head><body>
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
