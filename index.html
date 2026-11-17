@@ -284,6 +284,7 @@ function deleteRecord(index){
   putRecords(records);
   renderRecords();
   (async()=>{
+    if(!cloudClient)return;
     const {data}=await cloudClient.auth.getSession();
     if(data.session){
       await cloudClient.from('yoklamalar').delete()
@@ -348,6 +349,8 @@ function setupMobileNavigation(){
   window.showAppTab=showTab;
   showTab('homePanel');
 }
+// Build the four iPhone tabs before any optional cloud code runs.
+setupMobileNavigation();
 
 dailyReport();
 document.getElementById('search').oninput=()=>renderStudents('results',false);
@@ -461,10 +464,14 @@ function dailyReport(selectedDate){
 // Supabase bulut bağlantısı: yalnızca oturum açmış ve RLS ile izin verilmiş kullanıcı erişebilir.
 const SUPABASE_URL='https://gkfcibfetpespnopyeaz.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_T67X_h_Ia68q8Z81RlCqmQ_HDFBIrCD';
-const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const cloudClient=window.supabase?.createClient
+  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY)
+  : null;
+if(!cloudClient) cloudStatus.textContent='Bulut bağlantısı yüklenemedi. Uygulama yerel kayıtlarla çalışmaya devam ediyor.';
 let cloudSyncBusy=false;
 let cloudSyncPending=false;
 async function syncAttendanceCloud(){
+  if(!cloudClient){cloudStatus.textContent='Bulut bağlantısı şu anda kullanılamıyor. Yerel kayıtlar korunuyor.';return;}
   cloudSyncPending=true;
   if(cloudSyncBusy)return;
   cloudSyncBusy=true;
@@ -535,6 +542,7 @@ async function syncAttendanceCloud(){
 const cloudStatus=document.getElementById('cloudStatus');
 let studentSyncBusy=false;
 async function syncStudentsCloud(){
+  if(!cloudClient){cloudStatus.textContent='Bulut bağlantısı şu anda kullanılamıyor. Yerel öğrenci listesi gösteriliyor.';return getStudents();}
   if(studentSyncBusy)return getStudents();
   studentSyncBusy=true;
   try{
@@ -557,6 +565,7 @@ async function syncStudentsCloud(){
   }finally{studentSyncBusy=false;}
 }
 document.getElementById('cloudLogin').addEventListener('click',async()=>{
+  if(!cloudClient){cloudStatus.textContent='Bulut servisi yüklenemedi. İnternet bağlantısıyla sayfayı yenileyin.';return;}
   const email=document.getElementById('cloudEmail').value.trim();
   const password=document.getElementById('cloudPassword').value;
   const button=document.getElementById('cloudLogin');
@@ -576,7 +585,7 @@ document.getElementById('cloudLogin').addEventListener('click',async()=>{
     cloudStatus.textContent='Bağlantı hatası: '+(error.message||'Bilinmeyen hata')+' · Mevcut cihaz kayıtları korunuyor.';
   }finally{button.disabled=false;}
 });
-cloudClient.auth.getSession().then(({data,error})=>{
+if(cloudClient) cloudClient.auth.getSession().then(({data,error})=>{
   if(error){cloudStatus.textContent='Oturum kontrol edilemedi: '+error.message;return;}
   if(data.session){
     document.getElementById('cloudEmail').value=data.session.user.email||'';
@@ -595,6 +604,6 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 
 dailyReport();
-  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(()=>{}))}renderStudents();renderRecords();updateNextId();setupMobileNavigation();document.getElementById('studentManageSearch').oninput=()=>renderStudents('studentManageResults',true);renderStudents('studentManageResults',true);
+  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(()=>{}))}renderStudents();renderRecords();updateNextId();document.getElementById('studentManageSearch').oninput=()=>renderStudents('studentManageResults',true);renderStudents('studentManageResults',true);
 </script>
 </body></html>
