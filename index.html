@@ -39,91 +39,6 @@ header h1{font-size:21px}
   #dailyReport tr{break-inside:avoid;page-break-inside:avoid}
 }
 @media screen{#dailyReport .print-date{display:none}}
-
-/* Student cards keep their quick actions visible, as in the original iPhone workflow. */
-#homePanel #results .student{padding:15px}
-#homePanel #results .attendance-btn,
-#homePanel #results .monthly-report-btn,
-#homePanel #results .edit-student-btn,
-#homePanel #results .status-student-btn,
-#homePanel #results .delete-student-btn{display:block;width:100%;margin-top:9px;min-height:46px}
-#homePanel #results .delete-student-btn,
-#studentsPanel #studentManageResults .delete-student-btn{color:#9b2525}
-#studentsPanel #studentManageResults .student{padding:15px}
-#studentsPanel #studentManageResults .monthly-report-btn,#studentsPanel #studentManageResults .edit-student-btn,#studentsPanel #studentManageResults .status-student-btn,#studentsPanel #studentManageResults .delete-student-btn{display:block;width:100%;margin-top:9px;min-height:44px}
-#studentsPanel #studentManageResults .status-student-btn{color:#176b4b}
-
-/* iPhone-native inspired layout */
-:root{color-scheme:light;--ios-bg:#f2f2f7;--ios-card:#fff;--ios-blue:#173b57;--ios-green:#187653;--ios-separator:#e5e5ea}
-html{min-height:100%;background:var(--ios-bg);-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
-body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;background:var(--ios-bg);color:#1c1c1e;max-width:620px;margin:0 auto;padding: max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(100px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));}
-header{background:var(--ios-blue);padding:19px 20px;border-radius:22px;margin:2px 0 18px;box-shadow:0 5px 18px #173b571c}
-header h1{font-size:23px;letter-spacing:-.45px;font-weight:750;margin:0 0 5px}
-header>div{font-size:13px;opacity:.82;letter-spacing:.05px}
-.card{background:var(--ios-card);border:1px solid #ececf0;border-radius:22px;padding:18px;margin:14px 0;box-shadow:0 3px 14px #1c1c1e08}
-.sectiontitle{font-size:19px;letter-spacing:-.25px}
-label{font-size:16px;margin:13px 0 8px}
-input,select{min-height:48px;border:1px solid #d1d1d6;border-radius:14px;padding:13px 15px;font-size:16px;color:#1c1c1e;background:#fff;box-shadow:inset 0 1px 2px #00000005}
-input:focus,select:focus{outline:2px solid #173b5740;border-color:#173b57}
-button{font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.primary{min-height:50px;border-radius:15px;background:var(--ios-green);font-size:16px;padding:14px 16px}
-.secondary{min-height:46px;border-radius:14px;font-size:14px;padding:12px 14px;background:#eef0f4}
-.student{border:1px solid var(--ios-separator);border-radius:18px;padding:15px;margin-top:12px;background:#fff}
-.name{font-size:20px;letter-spacing:-.3px;line-height:1.2}
-.muted,.small{font-size:14px;line-height:1.4;color:#737780}
-#search{font-size:17px;min-height:54px;border-radius:16px}
-.searchbox #clearSearch{width:38px;height:38px;background:#eef0f4;color:#173b57}
-#results .student{padding:15px}
-#results .attendance-btn{min-height:50px;border-radius:15px;font-size:16px;margin-top:13px}
-.addcard{box-shadow:none;border:1px solid var(--ios-separator);padding:16px}
-#mobileTabs{padding:7px 12px calc(7px + env(safe-area-inset-bottom));background:rgba(250,250,252,.94);border-top:1px solid #d8d8dd;box-shadow:0 -5px 22px #0000000d;backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)}
-#mobileTabs button{min-height:52px;border-radius:14px;font-size:11px;font-weight:650;gap:2px;color:#777982}
-#mobileTabs button span{font-size:21px;line-height:25px}
-#mobileTabs button.active{background:#e7f1eb;color:#176b4b}
-#notice{font-size:14px;line-height:1.4}
-.tab-panel{min-height:55vh}
-@media(max-width:420px){
- body{padding-left:12px;padding-right:12px}
- header{padding:17px 18px;border-radius:20px}
- header h1{font-size:22px}
- .card{padding:16px;border-radius:20px}
- .student{padding:14px}
-}
-@media(min-width:700px){body{padding-top:24px}#mobileTabs{max-width:620px}}
-
-
-/* Ensure the four-tab navigation remains visible on tablets and phones. */
-body{padding-bottom:calc(112px + env(safe-area-inset-bottom))!important}
-#mobileTabs{
-  position:fixed!important;display:grid!important;visibility:visible!important;opacity:1!important;
-  z-index:99999!important;left:7px!important;right:7px!important;bottom:7px!important;
-  width:auto!important;max-width:none!important;transform:none!important;
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
-  padding:8px 10px!important;background:rgba(255,255,255,.98)!important;
-  border:1px solid #e2e6e9!important;border-radius:48px!important;
-}
-#mobileTabs button{min-height:64px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important}
-
-/* iPhone screenshot-matched rounded bottom navigation */
-body{padding-bottom:calc(126px + env(safe-area-inset-bottom))!important}
-#mobileTabs{
-  position:fixed;z-index:50;left:7px;right:7px;bottom:max(7px,env(safe-area-inset-bottom));
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;
-  padding:8px 10px;background:rgba(255,255,255,.98);
-  border:1px solid #e2e6e9;border-radius:48px;
-  box-shadow:0 3px 18px #172b3a12;
-  backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)
-}
-#mobileTabs button{
-  min-width:0;min-height:78px;padding:7px 2px;border:0;border-radius:28px;
-  background:transparent;color:#737b84;font-size:14px;font-weight:650;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px
-}
-#mobileTabs button span{font-size:30px;line-height:34px;font-weight:500}
-#mobileTabs button.active{background:#e8f1eb;color:#176b4b}
-@media(max-width:420px){#mobileTabs{left:6px;right:6px;gap:3px;padding:7px 8px}#mobileTabs button{min-height:76px;font-size:14px}#mobileTabs button span{font-size:29px;line-height:33px}}
-@media(min-width:700px){#mobileTabs{width:calc(100% - 16px);max-width:620px;left:50%;right:auto;transform:translateX(-50%);border-radius:48px}}
-
 </style></head><body>
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
 <section class="card" id="cloudCard">
@@ -152,7 +67,7 @@ function renderNewClassRoster(){
   const normalize=value=>String(value||'').toLocaleUpperCase('tr-TR').split('').filter(ch=>ch.trim()!==''&&!['-','_','/','.'].includes(ch)).join('');
   const query=normalize(input.value);
   if(!query){panel.style.display='none';panel.textContent='';return;}
-  const matches=getStudents().filter(student=>student.active!==false&&normalize(student.className)===query).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'tr'));
+  const matches=getStudents().filter(student=>normalize(student.className)===query).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'tr'));
   panel.style.display='block';
   if(!matches.length){panel.innerHTML='<b>Bu sınıfta kayıtlı öğrenci bulunamadı.</b>';return;}
   panel.innerHTML='<b>'+matches.length+' öğrenci kayıtlı:</b><ul style="margin:6px 0 0;padding-left:20px">'+matches.map(student=>'<li>'+escapeHtml(student.name)+' <span style="color:#687789">('+escapeHtml(student.studentId)+')</span></li>').join('')+'</ul>';
@@ -160,52 +75,7 @@ function renderNewClassRoster(){
 document.getElementById('newClass').addEventListener('input',renderNewClassRoster);
 function nextStudentId(){let ids=getStudents().map(s=>parseInt(String(s.studentId).replace(/\D/g,''),10)).filter(Number.isFinite);let n=(ids.length?Math.max(...ids):0)+1;return String(n).padStart(4,'0')}
 function updateNextId(){document.getElementById('nextId').textContent=nextStudentId()}
-function renderStudents(targetId='results',management=false){
-  const input=document.getElementById(targetId==='results'?'search':'studentManageSearch');
-  if(!input)return;
-  const q=input.value.trim().toLocaleLowerCase('tr-TR');
-  const all=getStudents().map(s=>({...s,active:s.active!==false}));
-  const matches=all.filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));
-  const box=document.getElementById(targetId);
-  const renderGroup=(students,inactive=false)=>students.length?students.map(s=>`<div class="student" style="${inactive?'opacity:.78;border-style:dashed':''}"><div class="name"></div><div class="muted"></div>${management?'<button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary status-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">${inactive?'Yemekhane kullanımını yeniden aktifleştir':'Yemekhane kullanımını pasife al'}</button><button class="secondary delete-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button>': '<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">Bugün geldi olarak kaydet</button>'}</div>`).join(''):'';
-  if(management){
-    const active=matches.filter(s=>s.active),inactive=matches.filter(s=>!s.active);
-    box.innerHTML='<p class="small"><b>Aktif öğrenciler ('+active.length+')</b></p>'+renderGroup(active)+'<p class="small" style="margin-top:22px"><b>Pasif öğrenciler ('+inactive.length+')</b> · Eski yoklama kayıtları korunur</p>'+renderGroup(inactive,true);
-  }else{
-    const active=matches.filter(s=>s.active);
-    box.innerHTML=renderGroup(active)||'<p class="small">Aktif öğrenci bulunamadı.</p>';
-  }
-  [...box.querySelectorAll('.student')].forEach(el=>{
-    const id=decodeURIComponent(el.querySelector('[data-id]')?.dataset.id||'');
-    const student=matches.find(x=>String(x.studentId)===String(id));
-    if(!student)return;
-    el.querySelector('.name').textContent=student.name;
-    el.querySelector('.muted').textContent=student.className+' · Öğrenci No: '+student.studentId+(student.active?'':' · Pasif');
-    const attendance=el.querySelector('.attendance-btn');if(attendance)attendance.onclick=()=>markStudent(student);
-    const monthly=el.querySelector('.monthly-report-btn');if(monthly)monthly.onclick=()=>toggleStudentMonthlyReport(el,student);
-    const edit=el.querySelector('.edit-student-btn');if(edit)edit.onclick=()=>editStudent(student);
-    const status=el.querySelector('.status-student-btn');if(status)status.onclick=()=>setStudentActive(student,!student.active);
-    const del=el.querySelector('.delete-student-btn');if(del)del.onclick=()=>deleteStudent(student);
-  });
-}
-async function setStudentActive(student,active){
-  const action=active?'yeniden aktifleştirmek':'pasife almak';
-  if(!confirm(student.name+' adlı öğrenciyi '+action+' istiyor musunuz?\n\nEski yoklama kayıtları silinmeyecek.'))return;
-  const buttons=[...document.querySelectorAll('.status-student-btn')];buttons.forEach(b=>b.disabled=true);
-  try{
-    const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
-    if(sessionError)throw sessionError;
-    if(!sessionData.session)throw new Error('İşlem için önce ortak bulut hesabına giriş yapın.');
-    const result=await cloudClient.from('öğrenciler').update({aktif:active}).eq('id',student.studentId).select('id,aktif');
-    if(result.error)throw result.error;
-    if(!result.data||!result.data.length)throw new Error('Bulutta değişiklik yapılmadı. Yetki veya öğrenci numarası kontrol edilmeli.');
-    putStudents(getStudents().map(s=>String(s.studentId)===String(student.studentId)?{...s,active}:s));
-    renderStudents();renderStudents('studentManageResults',true);renderNewClassRoster();
-    document.getElementById('notice').textContent=student.name+(active?' yeniden aktif edildi.':' pasife alındı. Eski yoklama geçmişi korundu.');
-  }catch(error){
-    document.getElementById('notice').textContent='Durum değiştirilemedi: '+(error.message||'Bilinmeyen hata');
-  }finally{buttons.forEach(b=>b.disabled=false);}
-}
+function renderStudents(targetId='results',management=false){const input=document.getElementById(targetId==='results'?'search':'studentManageSearch');if(!input)return;let q=input.value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById(targetId);box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div>${management?'':'<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">Bugün geldi olarak kaydet</button>'}${management?'<button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary delete-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button>':''}</div>`).join(''):'<p class="small">Öğrenci bulunamadı.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;const attendance=el.querySelector('.attendance-btn');if(attendance)attendance.onclick=()=>markStudent(students[i]);const monthly=el.querySelector('.monthly-report-btn');if(monthly)monthly.onclick=()=>toggleStudentMonthlyReport(el,students[i]);const edit=el.querySelector('.edit-student-btn');if(edit)edit.onclick=()=>editStudent(students[i]);const del=el.querySelector('.delete-student-btn');if(del)del.onclick=()=>deleteStudent(students[i])})}
 async function toggleStudentMonthlyReport(card,student){
   const panel=card.querySelector('.student-monthly-report');
   if(!panel)return;
@@ -296,7 +166,6 @@ function deleteRecord(index){
   putRecords(records);
   renderRecords();
   (async()=>{
-    if(!cloudClient)return;
     const {data}=await cloudClient.auth.getSession();
     if(data.session){
       await cloudClient.from('yoklamalar').delete()
@@ -361,8 +230,6 @@ function setupMobileNavigation(){
   window.showAppTab=showTab;
   showTab('homePanel');
 }
-// Build the four iPhone tabs before any optional cloud code runs.
-setupMobileNavigation();
 
 dailyReport();
 document.getElementById('search').oninput=()=>renderStudents('results',false);
@@ -380,18 +247,18 @@ document.getElementById('addStudent').onclick=async()=>{
     if(sessionError)throw sessionError;
     if(!sessionData.session)throw new Error('Öğrenci eklemek için önce ortak bulut hesabına giriş yapın.');
     // En güncel numarayı buluttaki listeye göre hesapla.
-    const latest=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,veli_telefon,aktif').order('id');
+    const latest=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,veli_telefon').order('id');
     if(latest.error)throw latest.error;
-    const cloudStudents=(latest.data||[]).map(row=>({studentId:String(row.id),name:row.ogrenci_adi||'',className:row.sinif||'',parentPhone:row.veli_telefon||'',active:row.aktif!==false})).filter(x=>x.name&&x.className);
+    const cloudStudents=(latest.data||[]).map(row=>({studentId:String(row.id),name:row.ogrenci_adi||'',className:row.sinif||'',parentPhone:row.veli_telefon||''})).filter(x=>x.name&&x.className);
     const studentId=String((cloudStudents.reduce((max,s)=>Math.max(max,parseInt(String(s.studentId).replace(/\\D/g,''),10)||0),0)+1)).padStart(4,'0');
     const duplicate=cloudStudents.some(s=>String(s.name).trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&String(s.className).trim().toLocaleLowerCase('tr-TR')===className.toLocaleLowerCase('tr-TR'));
     if(duplicate)throw new Error('Bu öğrenci aynı sınıfta bulut listesinde zaten var. Önce öğrenci listesini kontrol edin.');
     const inserted=await cloudClient.from('öğrenciler').insert({
-      id:studentId,ogrenci_adi:name,sinif:className,veli_telefon:parentPhone,aktif:true
-    }).select('id,ogrenci_adi,sinif,veli_telefon,aktif').single();
+      id:studentId,ogrenci_adi:name,sinif:className,veli_telefon:parentPhone
+    }).select('id,ogrenci_adi,sinif,veli_telefon').single();
     if(inserted.error)throw inserted.error;
     const row=inserted.data;
-    const refreshed=[...cloudStudents,{studentId:String(row.id),name:row.ogrenci_adi||name,className:row.sinif||className,parentPhone:row.veli_telefon||parentPhone,active:row.aktif!==false}];
+    const refreshed=[...cloudStudents,{studentId:String(row.id),name:row.ogrenci_adi||name,className:row.sinif||className,parentPhone:row.veli_telefon||parentPhone}];
     putStudents(refreshed);
     document.getElementById('newName').value='';
     document.getElementById('newClass').value='';
@@ -474,17 +341,12 @@ function dailyReport(selectedDate){
 }
 
 // Supabase bulut bağlantısı: yalnızca oturum açmış ve RLS ile izin verilmiş kullanıcı erişebilir.
-const cloudStatus=document.getElementById('cloudStatus');
 const SUPABASE_URL='https://gkfcibfetpespnopyeaz.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_T67X_h_Ia68q8Z81RlCqmQ_HDFBIrCD';
-const cloudClient=window.supabase?.createClient
-  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY)
-  : null;
-if(!cloudClient) cloudStatus.textContent='Bulut bağlantısı yüklenemedi. Uygulama yerel kayıtlarla çalışmaya devam ediyor.';
+const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let cloudSyncBusy=false;
 let cloudSyncPending=false;
 async function syncAttendanceCloud(){
-  if(!cloudClient){cloudStatus.textContent='Bulut bağlantısı şu anda kullanılamıyor. Yerel kayıtlar korunuyor.';return;}
   cloudSyncPending=true;
   if(cloudSyncBusy)return;
   cloudSyncBusy=true;
@@ -552,10 +414,9 @@ async function syncAttendanceCloud(){
     if(cloudSyncPending)syncAttendanceCloud();
   }
 }
-
+const cloudStatus=document.getElementById('cloudStatus');
 let studentSyncBusy=false;
 async function syncStudentsCloud(){
-  if(!cloudClient){cloudStatus.textContent='Bulut bağlantısı şu anda kullanılamıyor. Yerel öğrenci listesi gösteriliyor.';return getStudents();}
   if(studentSyncBusy)return getStudents();
   studentSyncBusy=true;
   try{
@@ -563,22 +424,20 @@ async function syncStudentsCloud(){
     if(sessionError)throw sessionError;
     if(!sessionData.session)return getStudents();
     const result=await cloudClient.from('öğrenciler')
-      .select('id,ogrenci_adi,sinif,veli_telefon,aktif').order('id');
+      .select('id,ogrenci_adi,sinif,veli_telefon').order('id');
     if(result.error)throw result.error;
     const cloudStudents=(result.data||[]).map(row=>({
       studentId:String(row.id),name:row.ogrenci_adi||'',
-      className:row.sinif||'',parentPhone:row.veli_telefon||'',
-      active:row.aktif!==false
+      className:row.sinif||'',parentPhone:row.veli_telefon||''
     })).filter(x=>x.name&&x.className);
     if(cloudStudents.length){
       putStudents(cloudStudents);
-      renderStudents();renderStudents('studentManageResults',true);updateNextId();
+      renderStudents();updateNextId();
     }
     return cloudStudents;
   }finally{studentSyncBusy=false;}
 }
 document.getElementById('cloudLogin').addEventListener('click',async()=>{
-  if(!cloudClient){cloudStatus.textContent='Bulut servisi yüklenemedi. İnternet bağlantısıyla sayfayı yenileyin.';return;}
   const email=document.getElementById('cloudEmail').value.trim();
   const password=document.getElementById('cloudPassword').value;
   const button=document.getElementById('cloudLogin');
@@ -598,7 +457,7 @@ document.getElementById('cloudLogin').addEventListener('click',async()=>{
     cloudStatus.textContent='Bağlantı hatası: '+(error.message||'Bilinmeyen hata')+' · Mevcut cihaz kayıtları korunuyor.';
   }finally{button.disabled=false;}
 });
-if(cloudClient) cloudClient.auth.getSession().then(({data,error})=>{
+cloudClient.auth.getSession().then(({data,error})=>{
   if(error){cloudStatus.textContent='Oturum kontrol edilemedi: '+error.message;return;}
   if(data.session){
     document.getElementById('cloudEmail').value=data.session.user.email||'';
@@ -617,6 +476,6 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 
 dailyReport();
-  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(()=>{}))}renderStudents();renderRecords();updateNextId();document.getElementById('studentManageSearch').oninput=()=>renderStudents('studentManageResults',true);renderStudents('studentManageResults',true);
+  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(()=>{}))}renderStudents();renderRecords();updateNextId();setupMobileNavigation();document.getElementById('studentManageSearch').oninput=()=>renderStudents('studentManageResults',true);renderStudents('studentManageResults',true);
 </script>
 </body></html>
