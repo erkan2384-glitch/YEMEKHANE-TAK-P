@@ -462,6 +462,7 @@ function dailyReport(selectedDate){
 }
 
 // Supabase bulut bağlantısı: yalnızca oturum açmış ve RLS ile izin verilmiş kullanıcı erişebilir.
+const cloudStatus=document.getElementById('cloudStatus');
 const SUPABASE_URL='https://gkfcibfetpespnopyeaz.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_T67X_h_Ia68q8Z81RlCqmQ_HDFBIrCD';
 const cloudClient=window.supabase?.createClient
@@ -539,7 +540,7 @@ async function syncAttendanceCloud(){
     if(cloudSyncPending)syncAttendanceCloud();
   }
 }
-const cloudStatus=document.getElementById('cloudStatus');
+
 let studentSyncBusy=false;
 async function syncStudentsCloud(){
   if(!cloudClient){cloudStatus.textContent='Bulut bağlantısı şu anda kullanılamıyor. Yerel öğrenci listesi gösteriliyor.';return getStudents();}
