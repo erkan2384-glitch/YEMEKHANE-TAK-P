@@ -181,23 +181,39 @@ async function setStudentActive(student,makeActive){
     document.getElementById('notice').textContent='Öğrenci durumu değiştirilemedi: '+(error.message||'Bilinmeyen hata')+'. Kayıt korunuyor.';
   }finally{buttons.forEach(b=>b.disabled=false);}
 }
-function deleteRecord(index){
+async function deleteRecord(index){
   if(!confirm('Bu yoklama kaydını silmek istiyor musunuz?')) return;
   const records=getRecords();
   const removed=records[index];
   if(!removed)return;
-  records.splice(index,1);
-  putRecords(records);
-  renderRecords();
-  (async()=>{
-    const {data}=await cloudClient.auth.getSession();
-    if(data.session){
-      await cloudClient.from('yoklamalar').delete()
-        .eq('attendance_date',removed.date)
-        .eq('student_id',String(removed.studentId||''))
-        .eq('created_by',data.session.user.id);
-    }
-  })();
+  const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+  if(sessionError){cloudStatus.textContent='Oturum kontrol edilemedi: '+sessionError.message;return;}
+  if(!sessionData.session){
+    cloudStatus.textContent='Diğer cihazlardan da silmek için önce bulut hesabına giriş yapın. Kayıt korunuyor.';
+    return;
+  }
+  const ownerId=sessionData.session.user.id;
+  try{
+    const marker=await cloudClient.from('yoklama_silmeleri').upsert({
+      attendance_date:removed.date,
+      student_id:String(removed.studentId||''),
+      created_by:ownerId
+    },{onConflict:'attendance_date,student_id,created_by',ignoreDuplicates:true});
+    if(marker.error)throw marker.error;
+    const deleted=await cloudClient.from('yoklamalar').delete()
+      .eq('attendance_date',removed.date)
+      .eq('student_id',String(removed.studentId||''))
+      .eq('created_by',ownerId);
+    if(deleted.error)throw deleted.error;
+    const latest=getRecords();
+    const removeKey=String(removed.date)+'|'+String(removed.studentId||'');
+    putRecords(latest.filter(x=>(String(x.date)+'|'+String(x.studentId||''))!==removeKey));
+    renderRecords();dailyReport();
+    cloudStatus.textContent='Yoklama silindi ve silme bilgisi diğer cihazlar için buluta kaydedildi.';
+    syncAttendanceCloud();
+  }catch(error){
+    cloudStatus.textContent='Yoklama silinemedi: '+(error.message||'Bilinmeyen hata')+'. Kayıt bu telefonda korundu.';
+  }
 }
 function renderRecords(){
 let a=getRecords().map((x,i)=>({...x,_i:i})).sort((x,y)=>{
@@ -370,6 +386,29 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_T67X_h_Ia68q8Z81RlCqmQ_HDFBIrCD';
 const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let cloudSyncBusy=false;
 let cloudSyncPending=false;
+async function fetchAttendanceTombstones(){
+  let rows=[];
+  for(let offset=0;;offset+=500){
+    const page=await cloudClient.from('yoklama_silmeleri')
+      .select('attendance_date,student_id')
+      .range(offset,offset+499);
+    if(page.error)throw page.error;
+    rows=rows.concat(page.data||[]);
+    if(!page.data||page.data.length<500)break;
+  }
+  return new Set(rows.map(x=>String(x.attendance_date)+'|'+String(x.student_id)));
+}
+async function removeTombstonedCloudRows(ownerId,tombstones){
+  for(const key of tombstones){
+    const split=key.indexOf('|');
+    const date=key.slice(0,split),studentId=key.slice(split+1);
+    const removed=await cloudClient.from('yoklamalar').delete()
+      .eq('attendance_date',date)
+      .eq('student_id',studentId)
+      .eq('created_by',ownerId);
+    if(removed.error)throw removed.error;
+  }
+}
 async function syncAttendanceCloud(){
   cloudSyncPending=true;
   if(cloudSyncBusy)return;
@@ -385,14 +424,19 @@ async function syncAttendanceCloud(){
         break;
       }
       const ownerId=sessionData.session.user.id;
+
+      // Önce kalıcı silme işaretlerini oku; işaretli kayıtları hiçbir zaman yeniden yükleme.
+      const tombstones=await fetchAttendanceTombstones();
       const local=getRecords();
-      const payload=local.map(x=>({
+      const cleanLocal=local.filter(x=>!tombstones.has(String(x.date)+'|'+String(x.studentId||'')));
+      if(cleanLocal.length!==local.length)putRecords(cleanLocal);
+      const payload=cleanLocal.map(x=>({
         attendance_date:x.date,
         student_id:String(x.studentId||''),
         student_name:String(x.name||''),
         class_name:String(x.className||''),
         created_by:ownerId,
-         ...(x.createdAt?{created_at:x.createdAt}:{})
+        ...(x.createdAt?{created_at:x.createdAt}:{})
       })).filter(x=>x.attendance_date&&x.student_id&&x.student_name&&x.class_name);
 
       // Büyük listeleri küçük paketlerle gönder; her paketin hatasını ayrı kontrol et.
@@ -401,6 +445,11 @@ async function syncAttendanceCloud(){
           .upsert(payload.slice(i,i+200),{onConflict:'attendance_date,student_id,created_by'});
         if(saved.error)throw saved.error;
       }
+
+      // İndirme sonrasında silme işaretlerini yeniden oku; eşzamanlı silme sırasında
+      // eski bir cihazın yüklediği satırları da buluttan temizle.
+      const finalTombstones=await fetchAttendanceTombstones();
+      await removeTombstonedCloudRows(ownerId,finalTombstones);
 
       // Supabase'in satır sınırına takılmamak için kayıtları sayfalı oku.
       let cloudRows=[];
@@ -414,15 +463,20 @@ async function syncAttendanceCloud(){
         if(!page.data||page.data.length<500)break;
       }
 
-      // İndirme sürerken yeni yoklama girilmiş olabilir; son yerel durumu tekrar oku.
-      const latestLocal=getRecords();
+      // İndirme sürerken yeni yoklama veya silme işlemi yapılmış olabilir.
+      const latestTombstones=await fetchAttendanceTombstones();
+      await removeTombstonedCloudRows(ownerId,latestTombstones);
+      const latestLocal=getRecords().filter(x=>!latestTombstones.has(String(x.date)+'|'+String(x.studentId||'')));
+      if(latestLocal.length!==getRecords().length)putRecords(latestLocal);
       const merged=new Map();
       cloudRows.forEach(x=>{
         const key=String(x.attendance_date)+'|'+String(x.student_id);
+        if(latestTombstones.has(key))return;
         merged.set(key,{date:x.attendance_date,studentId:String(x.student_id),name:x.student_name,className:x.class_name,createdAt:x.created_at||null});
       });
       latestLocal.forEach(x=>{
         const key=String(x.date)+'|'+String(x.studentId);
+        if(latestTombstones.has(key))return;
         merged.set(key,{date:x.date,studentId:String(x.studentId),name:x.name,className:x.className,createdAt:x.createdAt||merged.get(key)?.createdAt||null});
       });
       putRecords([...merged.values()]);
