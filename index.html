@@ -39,6 +39,45 @@ header h1{font-size:21px}
   #dailyReport tr{break-inside:avoid;page-break-inside:avoid}
 }
 @media screen{#dailyReport .print-date{display:none}}
+
+/* iPhone-native inspired layout */
+:root{color-scheme:light;--ios-bg:#f2f2f7;--ios-card:#fff;--ios-blue:#173b57;--ios-green:#187653;--ios-separator:#e5e5ea}
+html{min-height:100%;background:var(--ios-bg);-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;background:var(--ios-bg);color:#1c1c1e;max-width:620px;margin:0 auto;padding: max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(100px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));}
+header{background:var(--ios-blue);padding:19px 20px;border-radius:22px;margin:2px 0 18px;box-shadow:0 5px 18px #173b571c}
+header h1{font-size:23px;letter-spacing:-.45px;font-weight:750;margin:0 0 5px}
+header>div{font-size:13px;opacity:.82;letter-spacing:.05px}
+.card{background:var(--ios-card);border:1px solid #ececf0;border-radius:22px;padding:18px;margin:14px 0;box-shadow:0 3px 14px #1c1c1e08}
+.sectiontitle{font-size:19px;letter-spacing:-.25px}
+label{font-size:16px;margin:13px 0 8px}
+input,select{min-height:48px;border:1px solid #d1d1d6;border-radius:14px;padding:13px 15px;font-size:16px;color:#1c1c1e;background:#fff;box-shadow:inset 0 1px 2px #00000005}
+input:focus,select:focus{outline:2px solid #173b5740;border-color:#173b57}
+button{font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.primary{min-height:50px;border-radius:15px;background:var(--ios-green);font-size:16px;padding:14px 16px}
+.secondary{min-height:46px;border-radius:14px;font-size:14px;padding:12px 14px;background:#eef0f4}
+.student{border:1px solid var(--ios-separator);border-radius:18px;padding:15px;margin-top:12px;background:#fff}
+.name{font-size:20px;letter-spacing:-.3px;line-height:1.2}
+.muted,.small{font-size:14px;line-height:1.4;color:#737780}
+#search{font-size:17px;min-height:54px;border-radius:16px}
+.searchbox #clearSearch{width:38px;height:38px;background:#eef0f4;color:#173b57}
+#results .student{padding:15px}
+#results .attendance-btn{min-height:50px;border-radius:15px;font-size:16px;margin-top:13px}
+.addcard{box-shadow:none;border:1px solid var(--ios-separator);padding:16px}
+#mobileTabs{padding:7px 12px calc(7px + env(safe-area-inset-bottom));background:rgba(250,250,252,.94);border-top:1px solid #d8d8dd;box-shadow:0 -5px 22px #0000000d;backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)}
+#mobileTabs button{min-height:52px;border-radius:14px;font-size:11px;font-weight:650;gap:2px;color:#777982}
+#mobileTabs button span{font-size:21px;line-height:25px}
+#mobileTabs button.active{background:#e7f1eb;color:#176b4b}
+#notice{font-size:14px;line-height:1.4}
+.tab-panel{min-height:55vh}
+@media(max-width:420px){
+ body{padding-left:12px;padding-right:12px}
+ header{padding:17px 18px;border-radius:20px}
+ header h1{font-size:22px}
+ .card{padding:16px;border-radius:20px}
+ .student{padding:14px}
+}
+@media(min-width:700px){body{padding-top:24px}#mobileTabs{max-width:620px}}
+
 </style></head><body>
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
 <section class="card" id="cloudCard">
