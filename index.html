@@ -40,18 +40,14 @@ header h1{font-size:21px}
 }
 @media screen{#dailyReport .print-date{display:none}}
 
-/* Student cards keep their quick actions visible, as in the original iPhone workflow. */
-#homePanel #results .student{padding:15px}
-#homePanel #results .attendance-btn,
-#homePanel #results .monthly-report-btn,
-#homePanel #results .edit-student-btn,
-#homePanel #results .status-student-btn,
-#homePanel #results .delete-student-btn{display:block;width:100%;margin-top:9px;min-height:46px}
-#homePanel #results .delete-student-btn,
-#studentsPanel #studentManageResults .delete-student-btn{color:#9b2525}
+/* Keep attendance cards focused; all student administration lives in the Students tab. */
+#homePanel #results .monthly-report-btn,#homePanel #results .edit-student-btn,#homePanel #results .status-student-btn,#homePanel #results .delete-student-btn,#homePanel #results .student-monthly-report{display:none!important}
+#homePanel #results .student{padding:14px 15px}
+#homePanel #results .attendance-btn{display:block;width:100%;margin-top:12px}
 #studentsPanel #studentManageResults .student{padding:15px}
 #studentsPanel #studentManageResults .monthly-report-btn,#studentsPanel #studentManageResults .edit-student-btn,#studentsPanel #studentManageResults .status-student-btn,#studentsPanel #studentManageResults .delete-student-btn{display:block;width:100%;margin-top:9px;min-height:44px}
 #studentsPanel #studentManageResults .status-student-btn{color:#176b4b}
+#studentsPanel #studentManageResults .delete-student-btn{color:#9b2525}
 
 /* iPhone-native inspired layout */
 :root{color-scheme:light;--ios-bg:#f2f2f7;--ios-card:#fff;--ios-blue:#173b57;--ios-green:#187653;--ios-separator:#e5e5ea}
@@ -90,27 +86,6 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:
  .student{padding:14px}
 }
 @media(min-width:700px){body{padding-top:24px}#mobileTabs{max-width:620px}}
-
-
-/* iPhone screenshot-matched rounded bottom navigation */
-body{padding-bottom:calc(126px + env(safe-area-inset-bottom))!important}
-#mobileTabs{
-  position:fixed;z-index:50;left:7px;right:7px;bottom:max(7px,env(safe-area-inset-bottom));
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;
-  padding:8px 10px;background:rgba(255,255,255,.98);
-  border:1px solid #e2e6e9;border-radius:48px;
-  box-shadow:0 3px 18px #172b3a12;
-  backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)
-}
-#mobileTabs button{
-  min-width:0;min-height:78px;padding:7px 2px;border:0;border-radius:28px;
-  background:transparent;color:#737b84;font-size:14px;font-weight:650;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px
-}
-#mobileTabs button span{font-size:30px;line-height:34px;font-weight:500}
-#mobileTabs button.active{background:#e8f1eb;color:#176b4b}
-@media(max-width:420px){#mobileTabs{left:6px;right:6px;gap:3px;padding:7px 8px}#mobileTabs button{min-height:76px;font-size:14px}#mobileTabs button span{font-size:29px;line-height:33px}}
-@media(min-width:700px){#mobileTabs{width:calc(100% - 16px);max-width:620px;left:50%;right:auto;transform:translateX(-50%);border-radius:48px}}
 
 </style></head><body>
 <header><h1>Yemekhane Yoklama</h1><div>Çevrimdışı kullanım · Saat kaydı tutulmaz</div></header>
@@ -284,7 +259,6 @@ function deleteRecord(index){
   putRecords(records);
   renderRecords();
   (async()=>{
-    if(!cloudClient)return;
     const {data}=await cloudClient.auth.getSession();
     if(data.session){
       await cloudClient.from('yoklamalar').delete()
@@ -349,8 +323,6 @@ function setupMobileNavigation(){
   window.showAppTab=showTab;
   showTab('homePanel');
 }
-// Build the four iPhone tabs before any optional cloud code runs.
-setupMobileNavigation();
 
 dailyReport();
 document.getElementById('search').oninput=()=>renderStudents('results',false);
@@ -462,17 +434,12 @@ function dailyReport(selectedDate){
 }
 
 // Supabase bulut bağlantısı: yalnızca oturum açmış ve RLS ile izin verilmiş kullanıcı erişebilir.
-const cloudStatus=document.getElementById('cloudStatus');
 const SUPABASE_URL='https://gkfcibfetpespnopyeaz.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_T67X_h_Ia68q8Z81RlCqmQ_HDFBIrCD';
-const cloudClient=window.supabase?.createClient
-  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY)
-  : null;
-if(!cloudClient) cloudStatus.textContent='Bulut bağlantısı yüklenemedi. Uygulama yerel kayıtlarla çalışmaya devam ediyor.';
+const cloudClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 let cloudSyncBusy=false;
 let cloudSyncPending=false;
 async function syncAttendanceCloud(){
-  if(!cloudClient){cloudStatus.textContent='Bulut bağlantısı şu anda kullanılamıyor. Yerel kayıtlar korunuyor.';return;}
   cloudSyncPending=true;
   if(cloudSyncBusy)return;
   cloudSyncBusy=true;
@@ -540,10 +507,9 @@ async function syncAttendanceCloud(){
     if(cloudSyncPending)syncAttendanceCloud();
   }
 }
-
+const cloudStatus=document.getElementById('cloudStatus');
 let studentSyncBusy=false;
 async function syncStudentsCloud(){
-  if(!cloudClient){cloudStatus.textContent='Bulut bağlantısı şu anda kullanılamıyor. Yerel öğrenci listesi gösteriliyor.';return getStudents();}
   if(studentSyncBusy)return getStudents();
   studentSyncBusy=true;
   try{
@@ -566,7 +532,6 @@ async function syncStudentsCloud(){
   }finally{studentSyncBusy=false;}
 }
 document.getElementById('cloudLogin').addEventListener('click',async()=>{
-  if(!cloudClient){cloudStatus.textContent='Bulut servisi yüklenemedi. İnternet bağlantısıyla sayfayı yenileyin.';return;}
   const email=document.getElementById('cloudEmail').value.trim();
   const password=document.getElementById('cloudPassword').value;
   const button=document.getElementById('cloudLogin');
@@ -586,7 +551,7 @@ document.getElementById('cloudLogin').addEventListener('click',async()=>{
     cloudStatus.textContent='Bağlantı hatası: '+(error.message||'Bilinmeyen hata')+' · Mevcut cihaz kayıtları korunuyor.';
   }finally{button.disabled=false;}
 });
-if(cloudClient) cloudClient.auth.getSession().then(({data,error})=>{
+cloudClient.auth.getSession().then(({data,error})=>{
   if(error){cloudStatus.textContent='Oturum kontrol edilemedi: '+error.message;return;}
   if(data.session){
     document.getElementById('cloudEmail').value=data.session.user.email||'';
@@ -605,6 +570,6 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 
 dailyReport();
-  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(()=>{}))}renderStudents();renderRecords();updateNextId();document.getElementById('studentManageSearch').oninput=()=>renderStudents('studentManageResults',true);renderStudents('studentManageResults',true);
+  if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>reg.update()).catch(()=>{}))}renderStudents();renderRecords();updateNextId();setupMobileNavigation();document.getElementById('studentManageSearch').oninput=()=>renderStudents('studentManageResults',true);renderStudents('studentManageResults',true);
 </script>
 </body></html>
