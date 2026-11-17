@@ -448,11 +448,11 @@ async function syncStudentsCloud(){
     if(sessionError)throw sessionError;
     if(!sessionData.session)return getStudents();
     const result=await cloudClient.from('öğrenciler')
-      .select('id,ogrenci_adi,sinif,veli_telefon').order('id');
+      .select('id,ogrenci_adi,sinif,veli_telefon,aktif').order('id');
     if(result.error)throw result.error;
     const cloudStudents=(result.data||[]).map(row=>({
       studentId:String(row.id),name:row.ogrenci_adi||'',
-      className:row.sinif||'',parentPhone:row.veli_telefon||'',active:row.aktif!==false,active:row.aktif!==false
+      className:row.sinif||'',parentPhone:row.veli_telefon||'',active:row.aktif!==false
     })).filter(x=>x.name&&x.className);
     if(cloudStudents.length){
       putStudents(cloudStudents);
