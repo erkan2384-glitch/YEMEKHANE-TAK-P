@@ -40,6 +40,15 @@ header h1{font-size:21px}
 }
 @media screen{#dailyReport .print-date{display:none}}
 
+/* Keep attendance cards focused; all student administration lives in the Students tab. */
+#homePanel #results .monthly-report-btn,#homePanel #results .edit-student-btn,#homePanel #results .status-student-btn,#homePanel #results .delete-student-btn,#homePanel #results .student-monthly-report{display:none!important}
+#homePanel #results .student{padding:14px 15px}
+#homePanel #results .attendance-btn{display:block;width:100%;margin-top:12px}
+#studentsPanel #studentManageResults .student{padding:15px}
+#studentsPanel #studentManageResults .monthly-report-btn,#studentsPanel #studentManageResults .edit-student-btn,#studentsPanel #studentManageResults .status-student-btn,#studentsPanel #studentManageResults .delete-student-btn{display:block;width:100%;margin-top:9px;min-height:44px}
+#studentsPanel #studentManageResults .status-student-btn{color:#176b4b}
+#studentsPanel #studentManageResults .delete-student-btn{color:#9b2525}
+
 /* iPhone-native inspired layout */
 :root{color-scheme:light;--ios-bg:#f2f2f7;--ios-card:#fff;--ios-blue:#173b57;--ios-green:#187653;--ios-separator:#e5e5ea}
 html{min-height:100%;background:var(--ios-bg);-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
