@@ -92,6 +92,18 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent;touch-action:
 @media(min-width:700px){body{padding-top:24px}#mobileTabs{max-width:620px}}
 
 
+/* Ensure the four-tab navigation remains visible on tablets and phones. */
+body{padding-bottom:calc(112px + env(safe-area-inset-bottom))!important}
+#mobileTabs{
+  position:fixed!important;display:grid!important;visibility:visible!important;opacity:1!important;
+  z-index:99999!important;left:7px!important;right:7px!important;bottom:7px!important;
+  width:auto!important;max-width:none!important;transform:none!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  padding:8px 10px!important;background:rgba(255,255,255,.98)!important;
+  border:1px solid #e2e6e9!important;border-radius:48px!important;
+}
+#mobileTabs button{min-height:64px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important}
+
 /* iPhone screenshot-matched rounded bottom navigation */
 body{padding-bottom:calc(126px + env(safe-area-inset-bottom))!important}
 #mobileTabs{
