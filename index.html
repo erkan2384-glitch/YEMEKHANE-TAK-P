@@ -67,7 +67,7 @@ function renderNewClassRoster(){
   const normalize=value=>String(value||'').toLocaleUpperCase('tr-TR').split('').filter(ch=>ch.trim()!==''&&!['-','_','/','.'].includes(ch)).join('');
   const query=normalize(input.value);
   if(!query){panel.style.display='none';panel.textContent='';return;}
-  const matches=getStudents().filter(student=>normalize(student.className)===query).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'tr'));
+  const matches=getStudents().filter(student=>student.active!==false&&normalize(student.className)===query).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'tr'));
   panel.style.display='block';
   if(!matches.length){panel.innerHTML='<b>Bu sınıfta kayıtlı öğrenci bulunamadı.</b>';return;}
   panel.innerHTML='<b>'+matches.length+' öğrenci kayıtlı:</b><ul style="margin:6px 0 0;padding-left:20px">'+matches.map(student=>'<li>'+escapeHtml(student.name)+' <span style="color:#687789">('+escapeHtml(student.studentId)+')</span></li>').join('')+'</ul>';
@@ -75,7 +75,52 @@ function renderNewClassRoster(){
 document.getElementById('newClass').addEventListener('input',renderNewClassRoster);
 function nextStudentId(){let ids=getStudents().map(s=>parseInt(String(s.studentId).replace(/\D/g,''),10)).filter(Number.isFinite);let n=(ids.length?Math.max(...ids):0)+1;return String(n).padStart(4,'0')}
 function updateNextId(){document.getElementById('nextId').textContent=nextStudentId()}
-function renderStudents(targetId='results',management=false){const input=document.getElementById(targetId==='results'?'search':'studentManageSearch');if(!input)return;let q=input.value.trim().toLocaleLowerCase('tr-TR');let students=getStudents().filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));let box=document.getElementById(targetId);box.innerHTML=students.length?students.map(s=>`<div class="student"><div class="name"></div><div class="muted"></div>${management?'':'<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">Bugün geldi olarak kaydet</button>'}${management?'<button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary delete-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button>':''}</div>`).join(''):'<p class="small">Öğrenci bulunamadı.</p>';[...box.querySelectorAll('.student')].forEach((el,i)=>{el.querySelector('.name').textContent=students[i].name;el.querySelector('.muted').textContent=students[i].className+' · Öğrenci No: '+students[i].studentId;const attendance=el.querySelector('.attendance-btn');if(attendance)attendance.onclick=()=>markStudent(students[i]);const monthly=el.querySelector('.monthly-report-btn');if(monthly)monthly.onclick=()=>toggleStudentMonthlyReport(el,students[i]);const edit=el.querySelector('.edit-student-btn');if(edit)edit.onclick=()=>editStudent(students[i]);const del=el.querySelector('.delete-student-btn');if(del)del.onclick=()=>deleteStudent(students[i])})}
+function renderStudents(targetId='results',management=false){
+  const input=document.getElementById(targetId==='results'?'search':'studentManageSearch');
+  if(!input)return;
+  const q=input.value.trim().toLocaleLowerCase('tr-TR');
+  const all=getStudents().map(s=>({...s,active:s.active!==false}));
+  const matches=all.filter(s=>!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q));
+  const box=document.getElementById(targetId);
+  const renderGroup=(students,inactive=false)=>students.length?students.map(s=>`<div class="student" style="${inactive?'opacity:.78;border-style:dashed':''}"><div class="name"></div><div class="muted"></div>${management?'<button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:10px;background:#f3f6f8;border-radius:10px"></div><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary status-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">${inactive?'Yemekhane kullanımını yeniden aktifleştir':'Yemekhane kullanımını pasife al'}</button><button class="secondary delete-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px;color:#9b2525">Öğrenciyi sil</button>': '<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">Bugün geldi olarak kaydet</button>'}</div>`).join(''):'';
+  if(management){
+    const active=matches.filter(s=>s.active),inactive=matches.filter(s=>!s.active);
+    box.innerHTML='<p class="small"><b>Aktif öğrenciler ('+active.length+')</b></p>'+renderGroup(active)+'<p class="small" style="margin-top:22px"><b>Pasif öğrenciler ('+inactive.length+')</b> · Eski yoklama kayıtları korunur</p>'+renderGroup(inactive,true);
+  }else{
+    const active=matches.filter(s=>s.active);
+    box.innerHTML=renderGroup(active)||'<p class="small">Aktif öğrenci bulunamadı.</p>';
+  }
+  [...box.querySelectorAll('.student')].forEach(el=>{
+    const id=decodeURIComponent(el.querySelector('[data-id]')?.dataset.id||'');
+    const student=matches.find(x=>String(x.studentId)===String(id));
+    if(!student)return;
+    el.querySelector('.name').textContent=student.name;
+    el.querySelector('.muted').textContent=student.className+' · Öğrenci No: '+student.studentId+(student.active?'':' · Pasif');
+    const attendance=el.querySelector('.attendance-btn');if(attendance)attendance.onclick=()=>markStudent(student);
+    const monthly=el.querySelector('.monthly-report-btn');if(monthly)monthly.onclick=()=>toggleStudentMonthlyReport(el,student);
+    const edit=el.querySelector('.edit-student-btn');if(edit)edit.onclick=()=>editStudent(student);
+    const status=el.querySelector('.status-student-btn');if(status)status.onclick=()=>setStudentActive(student,!student.active);
+    const del=el.querySelector('.delete-student-btn');if(del)del.onclick=()=>deleteStudent(student);
+  });
+}
+async function setStudentActive(student,active){
+  const action=active?'yeniden aktifleştirmek':'pasife almak';
+  if(!confirm(student.name+' adlı öğrenciyi '+action+' istiyor musunuz?\n\nEski yoklama kayıtları silinmeyecek.'))return;
+  const buttons=[...document.querySelectorAll('.status-student-btn')];buttons.forEach(b=>b.disabled=true);
+  try{
+    const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!sessionData.session)throw new Error('İşlem için önce ortak bulut hesabına giriş yapın.');
+    const result=await cloudClient.from('öğrenciler').update({aktif:active}).eq('id',student.studentId).select('id,aktif');
+    if(result.error)throw result.error;
+    if(!result.data||!result.data.length)throw new Error('Bulutta değişiklik yapılmadı. Yetki veya öğrenci numarası kontrol edilmeli.');
+    putStudents(getStudents().map(s=>String(s.studentId)===String(student.studentId)?{...s,active}:s));
+    renderStudents();renderStudents('studentManageResults',true);renderNewClassRoster();
+    document.getElementById('notice').textContent=student.name+(active?' yeniden aktif edildi.':' pasife alındı. Eski yoklama geçmişi korundu.');
+  }catch(error){
+    document.getElementById('notice').textContent='Durum değiştirilemedi: '+(error.message||'Bilinmeyen hata');
+  }finally{buttons.forEach(b=>b.disabled=false);}
+}
 async function toggleStudentMonthlyReport(card,student){
   const panel=card.querySelector('.student-monthly-report');
   if(!panel)return;
@@ -247,18 +292,18 @@ document.getElementById('addStudent').onclick=async()=>{
     if(sessionError)throw sessionError;
     if(!sessionData.session)throw new Error('Öğrenci eklemek için önce ortak bulut hesabına giriş yapın.');
     // En güncel numarayı buluttaki listeye göre hesapla.
-    const latest=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,veli_telefon').order('id');
+    const latest=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,veli_telefon,aktif').order('id');
     if(latest.error)throw latest.error;
-    const cloudStudents=(latest.data||[]).map(row=>({studentId:String(row.id),name:row.ogrenci_adi||'',className:row.sinif||'',parentPhone:row.veli_telefon||''})).filter(x=>x.name&&x.className);
+    const cloudStudents=(latest.data||[]).map(row=>({studentId:String(row.id),name:row.ogrenci_adi||'',className:row.sinif||'',parentPhone:row.veli_telefon||'',active:row.aktif!==false})).filter(x=>x.name&&x.className);
     const studentId=String((cloudStudents.reduce((max,s)=>Math.max(max,parseInt(String(s.studentId).replace(/\\D/g,''),10)||0),0)+1)).padStart(4,'0');
     const duplicate=cloudStudents.some(s=>String(s.name).trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&String(s.className).trim().toLocaleLowerCase('tr-TR')===className.toLocaleLowerCase('tr-TR'));
     if(duplicate)throw new Error('Bu öğrenci aynı sınıfta bulut listesinde zaten var. Önce öğrenci listesini kontrol edin.');
     const inserted=await cloudClient.from('öğrenciler').insert({
-      id:studentId,ogrenci_adi:name,sinif:className,veli_telefon:parentPhone
-    }).select('id,ogrenci_adi,sinif,veli_telefon').single();
+      id:studentId,ogrenci_adi:name,sinif:className,veli_telefon:parentPhone,aktif:true
+    }).select('id,ogrenci_adi,sinif,veli_telefon,aktif').single();
     if(inserted.error)throw inserted.error;
     const row=inserted.data;
-    const refreshed=[...cloudStudents,{studentId:String(row.id),name:row.ogrenci_adi||name,className:row.sinif||className,parentPhone:row.veli_telefon||parentPhone}];
+    const refreshed=[...cloudStudents,{studentId:String(row.id),name:row.ogrenci_adi||name,className:row.sinif||className,parentPhone:row.veli_telefon||parentPhone,active:row.aktif!==false}];
     putStudents(refreshed);
     document.getElementById('newName').value='';
     document.getElementById('newClass').value='';
@@ -424,15 +469,16 @@ async function syncStudentsCloud(){
     if(sessionError)throw sessionError;
     if(!sessionData.session)return getStudents();
     const result=await cloudClient.from('öğrenciler')
-      .select('id,ogrenci_adi,sinif,veli_telefon').order('id');
+      .select('id,ogrenci_adi,sinif,veli_telefon,aktif').order('id');
     if(result.error)throw result.error;
     const cloudStudents=(result.data||[]).map(row=>({
       studentId:String(row.id),name:row.ogrenci_adi||'',
-      className:row.sinif||'',parentPhone:row.veli_telefon||''
+      className:row.sinif||'',parentPhone:row.veli_telefon||'',
+      active:row.aktif!==false
     })).filter(x=>x.name&&x.className);
     if(cloudStudents.length){
       putStudents(cloudStudents);
-      renderStudents();updateNextId();
+      renderStudents();renderStudents('studentManageResults',true);updateNextId();
     }
     return cloudStudents;
   }finally{studentSyncBusy=false;}
