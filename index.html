@@ -260,6 +260,39 @@ function markStudent(s){
 }
 
 
+async function loadActionHistory(){
+  const panel=document.getElementById('actionHistoryList');
+  if(!panel)return;
+  panel.textContent='İşlem geçmişi yükleniyor…';
+  try{
+    const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!sessionData.session){panel.textContent='İşlem geçmişini görmek için bulut hesabına giriş yapın.';return;}
+    const result=await cloudClient.from('islem_gecmisi')
+      .select('description,actor_email,action,occurred_at')
+      .order('occurred_at',{ascending:false}).limit(100);
+    if(result.error)throw result.error;
+    const rows=result.data||[];
+    if(!rows.length){panel.textContent='Henüz işlem kaydı bulunmuyor.';return;}
+    panel.innerHTML='';
+    rows.forEach(item=>{
+      const entry=document.createElement('div');
+      entry.style.cssText='padding:10px 0;border-bottom:1px solid #e8edf0';
+      const detail=document.createElement('div');
+      detail.style.fontWeight='650';
+      detail.textContent=item.description||'İşlem';
+      const meta=document.createElement('div');
+      meta.className='small';
+      const when=item.occurred_at?new Date(item.occurred_at).toLocaleString('tr-TR'):'Tarih yok';
+      meta.textContent=when+' · '+(item.actor_email||'Giriş yapan hesap');
+      entry.append(detail,meta);
+      panel.appendChild(entry);
+    });
+  }catch(error){
+    panel.textContent='İşlem geçmişi alınamadı: '+(error.message||'Bilinmeyen hata');
+  }
+}
+
 function setupMobileNavigation(){
   const searchSection=document.getElementById('search').closest('section');
   const addSection=document.querySelector('.addcard');
@@ -272,6 +305,10 @@ function setupMobileNavigation(){
   students.appendChild(addSection);
   students.appendChild(manageSection);
   history.appendChild(recordsSection);
+  const actionHistory=document.createElement('section');
+  actionHistory.className='card';
+  actionHistory.innerHTML='<div class="sectiontitle">İşlem geçmişi</div><p class="small">Son 100 öğrenci ve yoklama işlemi. Telefon numarası gibi özel bilgiler kaydedilmez.</p><div id="actionHistoryList" class="small">İşlem geçmişi yükleniyor…</div><button type="button" class="secondary" id="refreshActionHistory" style="width:100%;margin-top:10px">Geçmişi yenile</button>';
+  history.appendChild(actionHistory);
   settings.appendChild(cloudSection);
   const nav=document.createElement('nav');nav.id='mobileTabs';nav.setAttribute('aria-label','Ana menü');
   nav.innerHTML='<button type="button" data-tab="homePanel" class="active"><span>✓</span>Yoklama</button><button type="button" data-tab="studentsPanel"><span>＋</span>Öğrenci</button><button type="button" data-tab="historyPanel"><span>▤</span>Geçmiş</button><button type="button" data-tab="settingsPanel"><span>⚙</span>Ayarlar</button>';
@@ -280,9 +317,11 @@ function setupMobileNavigation(){
     [home,students,history,settings].forEach(p=>p.classList.toggle('active',p.id===id));
     nav.querySelectorAll('button').forEach(btn=>btn.classList.toggle('active',btn.dataset.tab===id));
     if(id==='homePanel'){document.getElementById('search').focus({preventScroll:true});}
+    if(id==='historyPanel')loadActionHistory();
     window.scrollTo({top:0,behavior:'smooth'});
   }
   nav.addEventListener('click',e=>{const btn=e.target.closest('button[data-tab]');if(btn)showTab(btn.dataset.tab);});
+  actionHistory.querySelector('#refreshActionHistory').addEventListener('click',loadActionHistory);
   window.showAppTab=showTab;
   showTab('homePanel');
 }
