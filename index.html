@@ -271,7 +271,6 @@ function setupMobileNavigation(){
   showTab('homePanel');
 }
 
-dailyReport();
 document.getElementById('search').oninput=()=>renderStudents('results',false);
 
 document.getElementById('clearSearch').onclick=()=>{const input=document.getElementById('search');input.value='';renderStudents();input.focus()};
@@ -374,8 +373,8 @@ function dailyReport(selectedDate){
   if(old)old.remove();
   let d=document.createElement('div');d.id='dailyReport';d.innerHTML=report;
   const historyPanel=document.getElementById('historyPanel');
-  if(historyPanel)historyPanel.insertBefore(d,historyPanel.firstChild);
-  else document.body.appendChild(d);
+  if(!historyPanel)return;
+  historyPanel.insertBefore(d,historyPanel.firstChild);
   document.getElementById('reportDate').addEventListener('change',e=>dailyReport(e.target.value));
   document.getElementById('printDailyReport').addEventListener('click',()=>window.print());
 }
