@@ -57,7 +57,7 @@ header h1{font-size:21px}
   <p id="cloudStatus" class="small" aria-live="polite">Henüz bağlanmadı.</p>
 </section>
 <section class="card"><label for="search">Öğrenci ara</label><div class="searchbox"><input id="search" placeholder="Adını söyleyin veya yazın" autocomplete="off"><button type="button" id="clearSearch" aria-label="Aramayı temizle" title="Aramayı temizle">×</button></div><p class="small">Sesle aramak için iPhone klavyesindeki mikrofon simgesini kullanın.</p><div id="results"></div><div id="notice"></div></section>
-<section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A" autocomplete="off"><div id="classRosterPreview" class="small" style="display:none;margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px" aria-live="polite"></div></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div><div class="wide"><label for="parentPhone">Veli telefon numarası</label><input id="parentPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Örn. 05xx xxx xx xx"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Öğrenci ortak bulut hesabına kaydedilir ve aynı hesaba giriş yapan diğer telefonların listesine eşitlenir.</p></section>
+<section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A" autocomplete="off"><div id="classRosterPreview" class="small" style="display:none;margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px" aria-live="polite"></div></div><div><label for="newClassNo">Sınıf numarası</label><input id="newClassNo" type="text" inputmode="numeric" placeholder="Örn. 12" autocomplete="off"></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div><div class="wide"><label for="parentPhone">Veli telefon numarası</label><input id="parentPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Örn. 05xx xxx xx xx"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Öğrenci ortak bulut hesabına kaydedilir ve aynı hesaba giriş yapan diğer telefonların listesine eşitlenir.</p></section>
 
 <section class="card"><b>Yoklama kayıtları</b><p class="small">Kayıtlar bu telefonda korunur ve aynı hesaba bağlı cihazlarla bulutta birleştirilir. Bulut durumunu üst bölümden kontrol edin.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button><button id="backupBtn" class="secondary">Tüm verileri yedekle</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -87,13 +87,13 @@ function renderStudents(targetId='results',management=false){
   if(!input)return;
   const q=input.value.trim().toLocaleLowerCase('tr-TR');
   const all=getStudents();
-  const students=all.filter(s=>(management||s.active!==false)&&(!q||(s.name+' '+s.className+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q)));
+  const students=all.filter(s=>(management||s.active!==false)&&(!q||(s.name+' '+s.className+' '+s.classNo+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q)));
   const box=document.getElementById(targetId);
   box.innerHTML=students.length?students.map(s=>'<div class="student"><div class="name"></div><div class="muted"></div>'+(management?'<div class="small student-status"></div><button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary active-toggle-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">'+(s.active===false?'Yeniden aktifleştir':'Yemekhane kullanımını durdur')+'</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:12px;background:#f3f6f8;border-radius:10px"></div>':'<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">'+(getRecords().some(x=>x.date===today()&&String(x.studentId)===String(s.studentId))?'Kaydedildi ✓':'Bugün geldi')+'</button>')+'</div>').join(''):'<p class="small">'+(management?'Öğrenci bulunamadı.':'Aktif öğrenci bulunamadı.')+'</p>';
   [...box.querySelectorAll('.student')].forEach((el,i)=>{
     const student=students[i];
     el.querySelector('.name').textContent=student.name;
-    el.querySelector('.muted').textContent=student.className+' · Öğrenci No: '+student.studentId;
+    el.querySelector('.muted').textContent=student.className+' · Sınıf No: '+(student.classNo||'—')+' · Öğrenci No: '+student.studentId;
     const status=el.querySelector('.student-status');
     if(status)status.textContent=student.active===false?'Durum: Pasif — yoklama listesinde görünmez':'Durum: Aktif';
     const attendance=el.querySelector('.attendance-btn');
@@ -146,9 +146,11 @@ async function editStudent(student){
   if(name===null)return;
   const className=prompt('Sınıfı:',student.className);
   if(className===null)return;
+  const classNo=prompt('Sınıf numarası:',student.classNo||'');
+  if(classNo===null)return;
   const parentPhone=prompt('Veli telefon numarası:',student.parentPhone||'');
   if(parentPhone===null)return;
-  const cleanName=name.trim(),cleanClass=className.trim(),cleanPhone=parentPhone.trim();
+  const cleanName=name.trim(),cleanClass=className.trim(),cleanClassNo=classNo.trim(),cleanPhone=parentPhone.trim();
   if(!cleanName||!cleanClass){document.getElementById('notice').textContent='Ad soyad ve sınıf boş bırakılamaz.';return;}
   const buttons=[...document.querySelectorAll('.edit-student-btn')];
   buttons.forEach(b=>b.disabled=true);
@@ -157,13 +159,13 @@ async function editStudent(student){
     if(sessionError)throw sessionError;
     if(!sessionData.session)throw new Error('Düzenlemek için önce ortak bulut hesabına giriş yapın.');
     const result=await cloudClient.from('öğrenciler').update({
-      ogrenci_adi:cleanName,sinif:cleanClass,veli_telefon:cleanPhone
-    }).eq('id',student.studentId).select('id,ogrenci_adi,sinif,veli_telefon');
+      ogrenci_adi:cleanName,sinif:cleanClass,ogrenci_no:cleanClassNo,veli_telefon:cleanPhone
+    }).eq('id',student.studentId).select('id,ogrenci_adi,sinif,ogrenci_no,veli_telefon');
     if(result.error)throw result.error;
     if(!result.data||result.data.length===0)throw new Error('Bulutta değişiklik yapılmadı. Yetki veya öğrenci numarası kontrol edilmeli.');
     const row=result.data[0];
     const updated=getStudents().map(x=>String(x.studentId)===String(student.studentId)?{
-      ...x, name:row.ogrenci_adi||cleanName,className:row.sinif||cleanClass,parentPhone:row.veli_telefon||cleanPhone
+      ...x, name:row.ogrenci_adi||cleanName,className:row.sinif||cleanClass,classNo:row.ogrenci_no||cleanClassNo,parentPhone:row.veli_telefon||cleanPhone
     }:x);
     putStudents(updated);
     renderStudents();renderStudents('studentManageResults',true);
@@ -348,6 +350,7 @@ document.getElementById('clearSearch').onclick=()=>{const input=document.getElem
 document.getElementById('addStudent').onclick=async()=>{
   const name=document.getElementById('newName').value.trim();
   const className=document.getElementById('newClass').value.trim();
+  const classNo=document.getElementById('newClassNo').value.trim();
   const parentPhone=document.getElementById('parentPhone').value.trim();
   const button=document.getElementById('addStudent');
   if(!name||!className){document.getElementById('notice').textContent='Lütfen adı soyadı ve sınıfını doldurun.';return;}
@@ -357,21 +360,22 @@ document.getElementById('addStudent').onclick=async()=>{
     if(sessionError)throw sessionError;
     if(!sessionData.session)throw new Error('Öğrenci eklemek için önce ortak bulut hesabına giriş yapın.');
     // En güncel numarayı buluttaki listeye göre hesapla.
-    const latest=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,veli_telefon,aktif').order('id');
+    const latest=await cloudClient.from('öğrenciler').select('id,ogrenci_adi,sinif,ogrenci_no,veli_telefon,aktif').order('id');
     if(latest.error)throw latest.error;
-    const cloudStudents=(latest.data||[]).map(row=>({studentId:String(row.id),name:row.ogrenci_adi||'',className:row.sinif||'',parentPhone:row.veli_telefon||''})).filter(x=>x.name&&x.className);
+    const cloudStudents=(latest.data||[]).map(row=>({studentId:String(row.id),name:row.ogrenci_adi||'',className:row.sinif||'',classNo:row.ogrenci_no||'',parentPhone:row.veli_telefon||''})).filter(x=>x.name&&x.className);
     const studentId=String((cloudStudents.reduce((max,s)=>Math.max(max,parseInt(String(s.studentId).replace(/\\D/g,''),10)||0),0)+1)).padStart(4,'0');
     const duplicate=cloudStudents.some(s=>String(s.name).trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&String(s.className).trim().toLocaleLowerCase('tr-TR')===className.toLocaleLowerCase('tr-TR'));
     if(duplicate)throw new Error('Bu öğrenci aynı sınıfta bulut listesinde zaten var. Önce öğrenci listesini kontrol edin.');
     const inserted=await cloudClient.from('öğrenciler').insert({
-      id:studentId,ogrenci_adi:name,sinif:className,veli_telefon:parentPhone,aktif:true
-    }).select('id,ogrenci_adi,sinif,veli_telefon,aktif').single();
+      id:studentId,ogrenci_adi:name,sinif:className,ogrenci_no:classNo,veli_telefon:parentPhone,aktif:true
+    }).select('id,ogrenci_adi,sinif,ogrenci_no,veli_telefon,aktif').single();
     if(inserted.error)throw inserted.error;
     const row=inserted.data;
-    const refreshed=[...cloudStudents,{studentId:String(row.id),name:row.ogrenci_adi||name,className:row.sinif||className,parentPhone:row.veli_telefon||parentPhone,active:row.aktif!==false}];
+    const refreshed=[...cloudStudents,{studentId:String(row.id),name:row.ogrenci_adi||name,className:row.sinif||className,classNo:row.ogrenci_no||classNo,parentPhone:row.veli_telefon||parentPhone,active:row.aktif!==false}];
     putStudents(refreshed);
     document.getElementById('newName').value='';
     document.getElementById('newClass').value='';
+    document.getElementById('newClassNo').value='';
     document.getElementById('parentPhone').value='';
     document.getElementById('search').value='';
     document.getElementById('notice').textContent=name+' buluta eklendi. Diğer telefonlar listeyi otomatik yenileyecek.';
@@ -381,7 +385,7 @@ document.getElementById('addStudent').onclick=async()=>{
   }finally{button.disabled=false;}
 };
 function downloadCsv(filename,rows){let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');let u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));let el=document.createElement('a');el.href=u;el.download=filename;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
-document.getElementById('exportStudents').onclick=()=>{let a=[['TIP','Öğrenci No','Ad Soyad','Sınıf','Veli Telefonu'],...getStudents().map(x=>['OGRENCI',x.studentId,x.name,x.className,x.parentPhone||''])];downloadCsv('yemekhane_ogrenciler.csv',a)};
+document.getElementById('exportStudents').onclick=()=>{let a=[['TIP','Öğrenci No','Ad Soyad','Sınıf','Sınıf Numarası','Veli Telefonu'],...getStudents().map(x=>['OGRENCI',x.studentId,x.name,x.className,x.classNo||'',x.parentPhone||''])];downloadCsv('yemekhane_ogrenciler.csv',a)};
 document.getElementById('exportRecords').onclick=()=>{let a=[['TIP','Tarih','Öğrenci No','Ad Soyad','Sınıf'],...getRecords().map(x=>['YOKLAMA',x.date,x.studentId,x.name,x.className])];downloadCsv('yemekhane_yoklamalar.csv',a)};
 document.getElementById('backupBtn').onclick=()=>{
   const backup={app:'Yemekhane Yoklama',version:1,createdAt:new Date().toISOString(),students:getStudents(),records:getRecords()};
@@ -394,7 +398,7 @@ document.getElementById('backupBtn').onclick=()=>{
 document.getElementById('importBtn').onclick=()=>document.getElementById('file').click();
 function parseCsv(text){let rows=[],row=[],field='',quoted=false;for(let i=0;i<text.length;i++){let c=text[i],n=text[i+1];if(quoted){if(c==='"'&&n==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else{if(c==='"')quoted=true;else if(c==='; '||c===';'){row.push(field);field=''}else if(c===','){row.push(field);field=''}else if(c==='\n'){row.push(field);rows.push(row);row=[];field=''}else if(c!=='\r')field+=c}}row.push(field);if(row.some(x=>x!==''))rows.push(row);return rows}
 document.getElementById('file').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let text=(await f.text()).replace(/^\ufeff/,'');let rows=parseCsv(text);if(!rows.length)throw Error('Dosya boş.');let head=rows[0].map(x=>x.trim().toLocaleLowerCase('tr-TR'));let students=getStudents(),records=getRecords(),addedS=0,addedR=0,updatedPhones=0;let isStudent=head.some(x=>x.includes('ad soyad'))&&head.some(x=>x.includes('sınıf'))&&!head.some(x=>x.includes('tarih'));let isRecord=head.some(x=>x.includes('tarih'))&&head.some(x=>x.includes('ad soyad'));
-for(let r of rows.slice(1)){if(isStudent){let id=r[1]||'',name=(r[2]||'').trim(),cls=(r[3]||'').trim();if(!name||!cls)continue;let existing=students.find(x=>String(x.name||'').trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&String(x.className||'').trim().toLocaleLowerCase('tr-TR')===cls.toLocaleLowerCase('tr-TR'));let phone=(r[4]||'').trim();if(existing){if(phone&&existing.parentPhone!==phone){existing.parentPhone=phone;updatedPhones++}}else{students.push({studentId:id||String(students.length+1).padStart(4,'0'),name,className:cls,parentPhone:phone});addedS++}}else if(isRecord){let date=r[1]||r[0]||'',id=r[2]||r[1]||'',name=(r[3]||r[2]||'').trim(),cls=(r[4]||r[3]||'').trim();if(!date||!name||!cls)continue;let key=[date,name.toLocaleLowerCase('tr-TR'),cls.toLocaleLowerCase('tr-TR')].join('|');if(!records.some(x=>[x.date,x.name.toLocaleLowerCase('tr-TR'),x.className.toLocaleLowerCase('tr-TR')].join('|')===key)){records.push({date,studentId:id,name,className:cls});addedR++}}}
+for(let r of rows.slice(1)){if(isStudent){let id=r[1]||'',name=(r[2]||'').trim(),cls=(r[3]||'').trim();if(!name||!cls)continue;let existing=students.find(x=>String(x.name||'').trim().toLocaleLowerCase('tr-TR')===name.toLocaleLowerCase('tr-TR')&&String(x.className||'').trim().toLocaleLowerCase('tr-TR')===cls.toLocaleLowerCase('tr-TR'));let phone=(r[5]||r[4]||'').trim();if(existing){const classNo=(r[4]||'').trim();if(classNo)existing.classNo=classNo;if(phone&&existing.parentPhone!==phone){existing.parentPhone=phone;updatedPhones++}}else{students.push({studentId:id||String(students.length+1).padStart(4,'0'),name,className:cls,classNo:(r[4]||'').trim(),parentPhone:phone});addedS++}}else if(isRecord){let date=r[1]||r[0]||'',id=r[2]||r[1]||'',name=(r[3]||r[2]||'').trim(),cls=(r[4]||r[3]||'').trim();if(!date||!name||!cls)continue;let key=[date,name.toLocaleLowerCase('tr-TR'),cls.toLocaleLowerCase('tr-TR')].join('|');if(!records.some(x=>[x.date,x.name.toLocaleLowerCase('tr-TR'),x.className.toLocaleLowerCase('tr-TR')].join('|')===key)){records.push({date,studentId:id,name,className:cls});addedR++}}}
 if(isStudent){putStudents(students);document.getElementById('notice').textContent=addedS+' yeni öğrenci eklendi; '+updatedPhones+' mevcut öğrencinin veli telefonu güncellendi.';renderStudents();renderStudents('studentManageResults',true);updateNextId();}else if(isRecord){putRecords(records);document.getElementById('notice').textContent=addedR+' yeni yoklama kaydı aktarıldı. Tekrar kayıtlar atlandı.';renderRecords();dailyReport()}else throw Error('Dosya biçimi tanınmadı. Öğrenci veya yoklama CSV dosyasını seçin.');
 }catch(err){document.getElementById('notice').textContent='Aktarım yapılamadı: '+err.message}e.target.value=''};
 function dailyReport(selectedDate){
@@ -576,7 +580,7 @@ async function syncStudentsCloud(){
     if(result.error)throw result.error;
     const cloudStudents=(result.data||[]).map(row=>({
       studentId:String(row.id),name:row.ogrenci_adi||'',
-      className:row.sinif||'',parentPhone:row.veli_telefon||'',active:row.aktif!==false
+      className:row.sinif||'',classNo:row.ogrenci_no||'',parentPhone:row.veli_telefon||'',active:row.aktif!==false
     })).filter(x=>x.name&&x.className);
     if(cloudStudents.length){
       putStudents(cloudStudents);
