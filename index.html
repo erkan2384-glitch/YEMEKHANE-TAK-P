@@ -103,7 +103,7 @@ function renderStudents(targetId='results',management=false){
     return searchable.toLocaleLowerCase('tr-TR').includes(q);
   });
   const box=document.getElementById(targetId);
-  box.innerHTML=students.length?students.map(s=>'<div class="student"><div class="name"></div><div class="muted"></div>'+(management?'<div class="small student-status"></div><button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary voice-edit-btn" data-id="undefined" style="width:100%;margin-top:8px">🎙️ Sesli düzenle</button><button class="secondary active-toggle-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">'+(s.active===false?'Yeniden aktifleştir':'Yemekhane kullanımını durdur')+'</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:12px;background:#f3f6f8;border-radius:10px"></div>':'<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">'+(getRecords().some(x=>x.date===today()&&String(x.studentId)===String(s.studentId))?'Kaydedildi ✓':'Bugün geldi')+'</button>')+'</div>').join(''):'<p class="small">'+(management?'Öğrenci bulunamadı.':'Aktif öğrenci bulunamadı.')+'</p>';
+  box.innerHTML=students.length?students.map(s=>'<div class="student"><div class="name"></div><div class="muted"></div>'+(management?'<div class="small student-status"></div><button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary active-toggle-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">'+(s.active===false?'Yeniden aktifleştir':'Yemekhane kullanımını durdur')+'</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:12px;background:#f3f6f8;border-radius:10px"></div>':'<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">'+(getRecords().some(x=>x.date===today()&&String(x.studentId)===String(s.studentId))?'Kaydedildi ✓':'Bugün geldi')+'</button>')+'</div>').join(''):'<p class="small">'+(management?'Öğrenci bulunamadı.':'Aktif öğrenci bulunamadı.')+'</p>';
   [...box.querySelectorAll('.student')].forEach((el,i)=>{
     const student=students[i];
     el.querySelector('.name').textContent=student.name;
@@ -191,47 +191,10 @@ async function editStudent(student){
     document.getElementById('notice').textContent='Öğrenci bilgileri güncellenemedi: '+(error.message||'Bilinmeyen hata');
   }finally{buttons.forEach(b=>b.disabled=false);}
 }
-async function editStudentVoice(student,button){
-  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SpeechRecognition){
-    document.getElementById('notice').textContent='Bu iPhone tarayıcısında sesli tanıma desteklenmiyor. Normal düzenleme düğmesini kullanabilirsiniz.';
-    return;
-  }
-  const recognition=new SpeechRecognition();
-  recognition.lang='tr-TR';recognition.continuous=false;recognition.interimResults=false;recognition.maxAlternatives=1;
-  button.disabled=true;
-  document.getElementById('notice').textContent='Dinleniyor… Şöyle söyleyin: Adı soyadı Ali Uslu, sınıfı 7-B, sınıf numarası 40, veli telefonu 05…';
-  recognition.onresult=async(event)=>{
-    const transcript=(event.results[0][0].transcript||'').trim();
-    const patterns=[
-      ['name',/(?:adı soyadı|ad soyad|adı)\s+(.+?)(?=\s+(?:sınıfı|sınıf numarası|numarası|veli telefonu|telefonu)\b|$)/i],
-      ['className',/sınıfı\s+(.+?)(?=\s+(?:adı soyadı|ad soyad|sınıf numarası|numarası|veli telefonu|telefonu)\b|$)/i],
-      ['classNo',/sınıf numarası\s+(\d+)/i],
-      ['parentPhone',/(?:veli telefonu|telefonu)\s+([+\d][+\d\s().-]{7,})/i]
-    ];
-    const values={name:student.name,className:student.className,classNo:student.classNo||'',parentPhone:student.parentPhone||''};
-    let found=0;
-    for(const [key,regex] of patterns){const match=transcript.match(regex);if(match){values[key]=match[1].trim().replace(/[.,;]+$/,'');found++;}}
-    if(!found){
-      document.getElementById('notice').textContent='Komuttan alanları ayıramadım. Lütfen normal düzenlemeyi kullanın veya alanları açıkça söyleyin.';
-      button.disabled=false;return;
-    }
-    const summary='Algılanan komut: '+transcript+'\n\nKaydedilecek bilgiler:\nAd soyad: '+values.name+'\nSınıf: '+values.className+'\nSınıf numarası: '+values.classNo+'\nVeli telefonu: '+values.parentPhone+'\n\nBu bilgileri kaydedelim mi?';
-    if(!confirm(summary)){document.getElementById('notice').textContent='Değişiklikler kaydedilmedi.';button.disabled=false;return;}
-    await saveStudentInfo(student,values.name,values.className,values.classNo,values.parentPhone);
-    button.disabled=false;
-  };
-  recognition.onerror=(event)=>{
-    document.getElementById('notice').textContent='Ses tanıma hatası: '+(event.error||'Tekrar deneyin');
-    button.disabled=false;
-  };
-  recognition.onend=()=>{button.disabled=false;};
-  try{recognition.start();}catch(error){document.getElementById('notice').textContent='Mikrofon başlatılamadı: '+error.message;button.disabled=false;}
-}
 async function saveStudentInfo(student,name,className,classNo,parentPhone){
   const cleanName=name.trim(),cleanClass=className.trim(),cleanClassNo=classNo.trim(),cleanPhone=parentPhone.trim();
   if(!cleanName||!cleanClass){document.getElementById('notice').textContent='Ad soyad ve sınıf boş bırakılamaz.';return;}
-  const buttons=[...document.querySelectorAll('.edit-student-btn,.voice-edit-btn')];
+  const buttons=[...document.querySelectorAll('.edit-student-btn')];
   buttons.forEach(b=>b.disabled=true);
   try{
     const {data:sessionData,error:sessionError}=await cloudClient.auth.getSession();
