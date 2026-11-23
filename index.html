@@ -87,7 +87,14 @@ function renderStudents(targetId='results',management=false){
   if(!input)return;
   const q=input.value.trim().toLocaleLowerCase('tr-TR');
   const all=getStudents();
-  const students=all.filter(s=>(management||s.active!==false)&&(!q||(s.name+' '+s.className+' '+s.classNo+' '+s.studentId).toLocaleLowerCase('tr-TR').includes(q)));
+  const numericQuery=/^\d+$/.test(q);
+  const students=all.filter(s=>{
+    if(!management&&s.active===false)return false;
+    if(!q)return true;
+    if(targetId==='results'&&numericQuery)return String(s.classNo||'').trim()===q;
+    const searchable=management?(s.name+' '+s.className+' '+s.classNo+' '+s.studentId):(s.name+' '+s.className);
+    return searchable.toLocaleLowerCase('tr-TR').includes(q);
+  });
   const box=document.getElementById(targetId);
   box.innerHTML=students.length?students.map(s=>'<div class="student"><div class="name"></div><div class="muted"></div>'+(management?'<div class="small student-status"></div><button class="secondary monthly-report-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Aylık yemekhane kullanımını gör</button><button class="secondary edit-student-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">Öğrenci bilgilerini düzenle</button><button class="secondary active-toggle-btn" data-id="'+encodeURIComponent(s.studentId)+'" style="width:100%;margin-top:8px">'+(s.active===false?'Yeniden aktifleştir':'Yemekhane kullanımını durdur')+'</button><div class="student-monthly-report" style="display:none;margin-top:10px;padding:12px;background:#f3f6f8;border-radius:10px"></div>':'<button class="primary attendance-btn" data-id="'+encodeURIComponent(s.studentId)+'">'+(getRecords().some(x=>x.date===today()&&String(x.studentId)===String(s.studentId))?'Kaydedildi ✓':'Bugün geldi')+'</button>')+'</div>').join(''):'<p class="small">'+(management?'Öğrenci bulunamadı.':'Aktif öğrenci bulunamadı.')+'</p>';
   [...box.querySelectorAll('.student')].forEach((el,i)=>{
