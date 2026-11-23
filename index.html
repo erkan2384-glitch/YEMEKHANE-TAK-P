@@ -583,7 +583,7 @@ async function syncStudentsCloud(){
     if(sessionError)throw sessionError;
     if(!sessionData.session)return getStudents();
     const result=await cloudClient.from('öğrenciler')
-      .select('id,ogrenci_adi,sinif,veli_telefon,aktif').order('id');
+      .select('id,ogrenci_adi,sinif,ogrenci_no,veli_telefon,aktif').order('id');
     if(result.error)throw result.error;
     const cloudStudents=(result.data||[]).map(row=>({
       studentId:String(row.id),name:row.ogrenci_adi||'',
