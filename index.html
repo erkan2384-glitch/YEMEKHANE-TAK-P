@@ -197,10 +197,10 @@ async function editStudentVoice(student,button){
   recognition.onresult=async(event)=>{
     const transcript=(event.results[0][0].transcript||'').trim();
     const patterns=[
-      ['name',/(?:adı soyadı|ad soyad|adı)\\s+(.+?)(?=\\s+(?:sınıfı|sınıf numarası|numarası|veli telefonu|telefonu)\\b|$)/i],
-      ['className',/sınıfı\\s+(.+?)(?=\\s+(?:adı soyadı|ad soyad|sınıf numarası|numarası|veli telefonu|telefonu)\\b|$)/i],
-      ['classNo',/sınıf numarası\\s+(\\d+)/i],
-      ['parentPhone',/(?:veli telefonu|telefonu)\\s+([+\\d][+\\d\\s().-]{7,})/i]
+      ['name',/(?:adı soyadı|ad soyad|adı)\s+(.+?)(?=\s+(?:sınıfı|sınıf numarası|numarası|veli telefonu|telefonu)\b|$)/i],
+      ['className',/sınıfı\s+(.+?)(?=\s+(?:adı soyadı|ad soyad|sınıf numarası|numarası|veli telefonu|telefonu)\b|$)/i],
+      ['classNo',/sınıf numarası\s+(\d+)/i],
+      ['parentPhone',/(?:veli telefonu|telefonu)\s+([+\d][+\d\s().-]{7,})/i]
     ];
     const values={name:student.name,className:student.className,classNo:student.classNo||'',parentPhone:student.parentPhone||''};
     let found=0;
@@ -209,7 +209,7 @@ async function editStudentVoice(student,button){
       document.getElementById('notice').textContent='Komuttan alanları ayıramadım. Lütfen normal düzenlemeyi kullanın veya alanları açıkça söyleyin.';
       button.disabled=false;return;
     }
-    const summary='Algılanan komut: '+transcript+'\\n\\nKaydedilecek bilgiler:\\nAd soyad: '+values.name+'\\nSınıf: '+values.className+'\\nSınıf numarası: '+values.classNo+'\\nVeli telefonu: '+values.parentPhone+'\\n\\nBu bilgileri kaydedelim mi?';
+    const summary='Algılanan komut: '+transcript+'\n\nKaydedilecek bilgiler:\nAd soyad: '+values.name+'\nSınıf: '+values.className+'\nSınıf numarası: '+values.classNo+'\nVeli telefonu: '+values.parentPhone+'\n\nBu bilgileri kaydedelim mi?';
     if(!confirm(summary)){document.getElementById('notice').textContent='Değişiklikler kaydedilmedi.';button.disabled=false;return;}
     await saveStudentInfo(student,values.name,values.className,values.classNo,values.parentPhone);
     button.disabled=false;
