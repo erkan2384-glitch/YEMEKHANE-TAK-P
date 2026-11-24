@@ -119,7 +119,7 @@ function renderStudents(targetId='results',management=false){
   [...box.querySelectorAll('.student')].forEach((el,i)=>{
     const student=students[i];
     el.querySelector('.name').textContent=student.name;
-    el.querySelector('.muted').textContent=student.className+' · Sınıf No: '+(student.classNo||'—')+' · Öğrenci No: '+student.studentId;
+    el.querySelector('.muted').textContent=student.className+' · Sınıf No: '+(student.classNo||'—')+(management?' · Öğrenci No: '+student.studentId:'');
     const status=el.querySelector('.student-status');
     if(status)status.textContent=student.active===false?'Durum: Pasif — yoklama listesinde görünmez':'Durum: Aktif';
     const attendance=el.querySelector('.attendance-btn');
