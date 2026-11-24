@@ -56,7 +56,7 @@ header h1{font-size:21px}
   <button id="cloudLogin" class="primary">Giriş yap ve öğrencileri eşitle</button>
   <p id="cloudStatus" class="small" aria-live="polite">Henüz bağlanmadı.</p>
 </section>
-<section class="card"><label for="schoolLevel">Okul kademesi</label><select id="schoolLevel" style="width:100%;margin:6px 0 14px;padding:12px;border:1px solid #ccd6df;border-radius:12px;background:#fff;font:inherit"><option value="all">Tüm öğrenciler</option><option value="primary">İlkokul (1–4. sınıf)</option><option value="middle">Ortaokul (5–8. sınıf)</option></select><label for="search">Öğrenci ara</label><div class="searchbox"><input id="search" placeholder="Adını söyleyin veya yazın" autocomplete="off"><button type="button" id="clearSearch" aria-label="Aramayı temizle" title="Aramayı temizle">×</button></div><p class="small">Sesle aramak için iPhone klavyesindeki mikrofon simgesini kullanın.</p><div id="results"></div><div id="notice"></div></section>
+<section class="card"><label for="schoolLevel">Okul kademesi</label><select id="schoolLevel" style="width:100%;margin:6px 0 14px;padding:12px;border:1px solid #ccd6df;border-radius:12px;background:#fff;font:inherit"><option value="all">Tüm öğrenciler</option><option value="primary">İlkokul (1–4. sınıf)</option><option value="middle">Ortaokul (5–8. sınıf)</option></select><label for="classList">Sınıf listeleri</label><select id="classList" style="width:100%;margin:6px 0 14px;padding:12px;border:1px solid #ccd6df;border-radius:12px;background:#fff;font:inherit"><option value="">Tüm sınıflar</option></select><label for="search">Öğrenci ara</label><div class="searchbox"><input id="search" placeholder="Adını söyleyin veya yazın" autocomplete="off"><button type="button" id="clearSearch" aria-label="Aramayı temizle" title="Aramayı temizle">×</button></div><p class="small">Sesle aramak için iPhone klavyesindeki mikrofon simgesini kullanın.</p><div id="results"></div><div id="notice"></div></section>
 <section class="card addcard"><div class="sectiontitle">Yeni Öğrenci Ekle</div><div class="small" style="margin:8px 0 4px">Otomatik verilecek öğrenci numarası: <b id="nextId">0002</b></div><div class="addgrid"><div><label for="newClass">Sınıfı</label><input id="newClass" placeholder="Örn. 1-A" autocomplete="off"><div id="classRosterPreview" class="small" style="display:none;margin-top:8px;padding:10px;background:#f3f6f8;border-radius:10px" aria-live="polite"></div></div><div><label for="newClassNo">Sınıf numarası</label><input id="newClassNo" type="text" inputmode="numeric" placeholder="Örn. 12" autocomplete="off"></div><div class="wide"><label for="newName">Adı soyadı</label><input id="newName" placeholder="Öğrencinin adı soyadı"></div><div class="wide"><label for="parentPhone">Veli telefon numarası</label><input id="parentPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Örn. 05xx xxx xx xx"></div></div><button id="addStudent" class="primary">Öğrenciyi ekle</button><p class="small">Öğrenci ortak bulut hesabına kaydedilir ve aynı hesaba giriş yapan diğer telefonların listesine eşitlenir.</p></section>
 
 <section class="card"><b>Yoklama kayıtları</b><p class="small">Kayıtlar bu telefonda korunur ve aynı hesaba bağlı cihazlarla bulutta birleştirilir. Bulut durumunu üst bölümden kontrol edin.</p><div id="records"></div><div class="row"><button id="exportStudents" class="secondary">Öğrenci listesini aktar</button><button id="exportRecords" class="secondary">Yoklama kayıtlarını aktar</button></div><div class="row"><button id="importBtn" class="secondary">Diğer telefondan CSV al</button><button id="backupBtn" class="secondary">Tüm verileri yedekle</button></div><input id="file" type="file" accept=".csv,text/csv" hidden></section>
@@ -87,6 +87,15 @@ function getSchoolLevel(className){
   if(!match)return 'unknown';
   return Number(match[1])<=4?'primary':'middle';
 }
+function refreshClassListOptions(){
+  const select=document.getElementById('classList');
+  if(!select)return;
+  const selected=select.value;
+  const level=document.getElementById('schoolLevel')?.value||'all';
+  const classes=[...new Set(getStudents().filter(s=>s.active!==false&&(level==='all'||getSchoolLevel(s.className)===level)).map(s=>String(s.className||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr',{numeric:true,sensitivity:'base'}));
+  select.innerHTML='<option value="">Tüm sınıflar</option>'+classes.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join('');
+  if(classes.includes(selected))select.value=selected;
+}
 function renderStudents(targetId='results',management=false){
   const input=document.getElementById(targetId==='results'?'search':'studentManageSearch');
   if(!input)return;
@@ -94,9 +103,12 @@ function renderStudents(targetId='results',management=false){
   const all=getStudents();
   const numericQuery=/^\d+$/.test(q);
   const schoolLevel=document.getElementById('schoolLevel')?.value||'all';
+  if(targetId==='results')refreshClassListOptions();
+  const selectedClass=document.getElementById('classList')?.value||'';
   const students=all.filter(s=>{
     if(!management&&s.active===false)return false;
     if(targetId==='results'&&schoolLevel!=='all'&&getSchoolLevel(s.className)!==schoolLevel)return false;
+    if(targetId==='results'&&selectedClass&&String(s.className||'').trim()!==selectedClass)return false;
     if(!q)return true;
     if(targetId==='results'&&numericQuery)return String(s.classNo||'').trim()===q;
     const searchable=management?(s.name+' '+s.className+' '+s.classNo+' '+s.studentId):(s.name+' '+s.className);
@@ -385,6 +397,7 @@ function setupMobileNavigation(){
 
 document.getElementById('search').oninput=()=>renderStudents('results',false);
 document.getElementById('schoolLevel').onchange=()=>renderStudents('results',false);
+document.getElementById('classList').onchange=()=>{document.getElementById('search').value='';renderStudents('results',false);};
 
 document.getElementById('clearSearch').onclick=()=>{const input=document.getElementById('search');input.value='';renderStudents();input.focus()};
 document.getElementById('addStudent').onclick=async()=>{
